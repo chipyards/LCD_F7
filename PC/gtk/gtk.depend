@@ -1,0 +1,31 @@
+# depslib dependency file v1.0
+1461920556 source:f:\dev\stm32\f7\lcd_f7_32\pc\appli.c
+	<stdio.h>
+	<math.h>
+	<windows.h>
+	"model.h"
+	"appli.h"
+
+1461788878 f:\dev\stm32\f7\lcd_f7_32\pc\model.h
+
+1461791389 f:\dev\stm32\f7\lcd_f7_32\pc\appli.h
+
+1461268359 source:f:\dev\stm32\f7\lcd_f7_32\pc\bmp_.c
+	<stdio.h>
+	<stdlib.h>
+	<stdarg.h>
+	<io.h>
+	<fcntl.h>
+	"bmp_.h"
+
+1461268226 f:\dev\stm32\f7\lcd_f7_32\pc\bmp_.h
+
+1461788465 source:f:\dev\stm32\f7\lcd_f7_32\pc\model.c
+	<stdio.h>
+	<windows.h>
+	<GL/gl.h>
+	"model.h"
+	"bmp_.h"
+	<fcntl.h>
+	<io.h>
+

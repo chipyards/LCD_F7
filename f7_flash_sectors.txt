@@ -1,0 +1,21 @@
+0800_0000		secteurs 0	 32kb (0x8000)
+0800_8000		secteurs 1	 32kb (0x8000)
+0801_0000		secteurs 2	 32kb (0x8000)
+0801_8000		secteurs 3	 32kb (0x8000)
+0802_0000		secteur  4	128kB (0x20000)
+0804_0000		secteurs 5	256kB (0x40000)
+0808_0000		secteurs 6	256kB (0x40000)
+080C_0000		secteurs 7	256kB (0x40000)
+080F_FFFF		the end
+
+1 image BMP full-frame : 480x272 = 130560 pix -> 391736 = 0x5FA38 bytes => 0x60000
+	image 1 (LCD_F7_06.zip)
+		(DMX33.7z)      : secteurs 6,7 (debut en 080A_0000, i.e. milieu du secteur 6)
+	image 2 (LCD_F7_09.zip) : secteurs 4,5
+
+fonts monospace : env. 12992
+	JFontxx auto-flashees (LCD_F7_32.7z) : secteur 3
+
+fonts a largeur variable  : 320*272 = 87362 pix -> 262086 = 0x3FFC6 bytes => 0x40000
+	vfonts1.bin (LCD_F7_32.7z) : secteur 5
+	(N.B. anterieurement cette BMP avait ete mise en secteur 4, debordant sur le 5) 

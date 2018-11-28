@@ -1,0 +1,594 @@
+
+/* Includes ------------------------------------------------------------------*/
+#include "stm32746g_discovery.h"
+#include "stm32746g_discovery_ts.h"
+#include "system_misc.h"
+#include "options.h"
+#include "jlcd.h"
+#include "jrtc.h"
+#include "idrag.h"
+#include "demo.h"
+#include "trans.h"
+#include <stdlib.h>
+
+void USB_PhyEnterLowPowerMode(void);
+void ETH_PhyEnterPowerDownMode(void);
+
+// #define GREEN_CPU	// deporte dans options.h
+// #define PROFILER_PI2	// pin PI2 aka D8 deporte dans options.h
+
+// ----------------------  SysTick ----------------------
+
+void SysTick_Handler(void)
+{
+  HAL_IncTick();
+}
+
+// ---------------------- contexte global ------------------
+
+// flags d'affichage
+#define DEMO_FLAG	1	// zone de scroll
+#define TRANS_FLAG	2
+#define MENU_FLAG	4
+
+#define LOGO_FLAG	0x10	// zone fixe
+#define DATE_FLAG	0x20
+#define HOUR_FLAG	0x40
+
+#define MN_ADJ_FLAG	0x100	// ajustements
+#define HH_ADJ_FLAG	0x200
+#define WD_ADJ_FLAG	0x1000
+#define MD_ADJ_FLAG	0x2000
+#define MM_ADJ_FLAG	0x4000
+#define TIME_ADJ_FLAGS ( HH_ADJ_FLAG | MN_ADJ_FLAG | WD_ADJ_FLAG | MD_ADJ_FLAG | MM_ADJ_FLAG )
+
+#define LOCPIX_FLAG	0x10000
+
+
+int show_flags;			// flags d'affichage
+int shown_day = 0;		// jour de semaine  0 à 4
+int touch_occur_cnt = 0;	// anti-rebond pour single touch
+int old_touch_cnt = 0;		// detection retour de double touch
+
+DAY_TIME daytime;	// le temps sous diverses formes
+
+#define UNSCROLL_TIMOUT 	10	// en s
+#define SHORT_TOUCH_DELAY	3	// en frames
+#define LONG_TOUCH_DELAY	120	// en frames
+
+char * menu_label[] = {	// ATTENTION chaque label doit commencer par un caractere unique !!!!
+#ifdef USE_TRANSCRIPT
+	"TRANSCRIPT",
+#endif
+#ifdef USE_DEMO
+	"FONTS DEMO",
+#endif
+	"LOCPIX" };
+#define QMENU	(sizeof(menu_label)/sizeof(char *))
+
+int imenu = 0;
+
+// quelques parametres geometriques de GUI
+#define SCROLL_ZONE_DX 300
+#define SCROLL_ZONE_DY 2000
+#define YLOGO 100
+#define YDATE 180
+#define YHOUR 220
+#define DBURG 12
+#define XBURG 426
+#define YBURG 48
+
+#ifdef FLASH_THE_FONTS
+int flash_bytes = 0;
+int flash_errs = 0;
+#endif
+
+// ---------------------- application ----------------------
+
+#ifdef PROFILER_PI2	// pins PI1 aka D13, PI2 aka D8//
+void GPIO_config_profiler_PI1_PI2(void)
+{
+GPIO_InitTypeDef gpio_init_structure;
+/* Enable GPIOs clock */
+__HAL_RCC_GPIOI_CLK_ENABLE();
+HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_RESET);
+HAL_GPIO_WritePin( GPIOI, GPIO_PIN_3, GPIO_PIN_RESET);
+gpio_init_structure.Pin       = GPIO_PIN_1 | GPIO_PIN_2;
+gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
+gpio_init_structure.Pull      = GPIO_NOPULL;
+gpio_init_structure.Speed     = GPIO_SPEED_LOW;
+HAL_GPIO_Init(GPIOI, &gpio_init_structure);
+}
+#endif
+
+// trace reticule
+void draw_reticle( int x, int y )
+{
+GC.line_color = ARGB_RED;
+jlcd_hline( 0, y, LCD_DX );
+jlcd_vline( x, 0, LCD_DY );
+}
+
+void unscroll(void)
+{
+idrag.yobj = 0;
+#ifdef USE_TRANSCRIPT
+if	( show_flags & TRANS_FLAG )
+	idrag.yobj = idrag.yobjmin;
+#endif
+#ifdef USE_DEMO
+if	( show_flags & DEMO_FLAG )
+	idrag.yobj = 0;
+#endif
+}
+
+// initialise les zones en fonction des options valides
+// et d'un flag concernant la zone de scroll
+void init_scroll_zones( int flag )
+{
+switch	( flag )
+	{
+	case MENU_FLAG :
+		idrag.yobjmin = -LCD_DY;
+		show_flags = MENU_FLAG | LOGO_FLAG;
+		break;
+	#ifdef USE_TIME_DATE
+	case TIME_ADJ_FLAGS :
+		idrag.yobjmin = -( LCD_DY * 2 );
+		break;
+	#endif
+	#ifdef USE_TRANSCRIPT
+	case TRANS_FLAG :
+		idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, 0, SCROLL_ZONE_DX );
+		show_flags = TRANS_FLAG | LOGO_FLAG;
+		#ifdef USE_TIME_DATE
+		show_flags |= ( DATE_FLAG | HOUR_FLAG );
+		#endif
+		break;
+	#endif
+	#ifdef USE_DEMO
+	case DEMO_FLAG :
+		idrag.yobjmin = LCD_DY - ( SCROLL_ZONE_DY );
+		show_flags = DEMO_FLAG | LOGO_FLAG;
+		#ifdef USE_TIME_DATE
+		show_flags |= ( DATE_FLAG | HOUR_FLAG );
+		#endif
+		break;
+	#endif
+	default:
+		show_flags = LOGO_FLAG;
+		#ifdef USE_TIME_DATE
+		show_flags |= ( DATE_FLAG | HOUR_FLAG );
+		#endif
+	}
+unscroll();
+}
+
+// initialise par defaut en fonction des options
+// le dernier element est prioritaire
+void init_zones_default(void)
+{
+init_scroll_zones( 0 );
+#ifdef USE_TRANSCRIPT
+init_scroll_zones( TRANS_FLAG );
+#endif
+#ifdef USE_DEMO
+init_scroll_zones( DEMO_FLAG );
+#endif
+}
+
+
+// toutes les operations de trace
+void repaint( TS_StateTypeDef * touch )
+{
+int xc, x, y, w;
+char tbuf[32];
+__HAL_RCC_DMA2D_CLK_ENABLE();
+if	( show_flags & ( LOGO_FLAG | DATE_FLAG | HOUR_FLAG | LOCPIX_FLAG ) )
+	{	// preparer affichage d'elements centres zone droite
+	xc = ( SCROLL_ZONE_DX + LCD_DX ) / 2;
+	GC.fill_color = ARGB_WHITE;
+	jlcd_rect_fill( SCROLL_ZONE_DX + 1, 0, LCD_DX - SCROLL_ZONE_DX - 1, LCD_DY );
+	}
+if	( show_flags & LOGO_FLAG )
+	{
+	snprintf( tbuf, sizeof(tbuf), "<" );		// logo
+	GC.vfont = &JVFont36n;
+	w = jlcd_vtext_dx( tbuf );
+	x = xc - ( w / 2 );
+	y = YLOGO;
+	jlcd_vtext( x, y, tbuf );
+	snprintf( tbuf, sizeof(tbuf), "=" );		// burger
+	w = jlcd_vtext_dx( tbuf );
+	x = LCD_DX - w - DBURG;
+	y = DBURG;
+	jlcd_vtext( x, y, tbuf );
+	}
+#ifdef USE_TIME_DATE
+if	( show_flags & DATE_FLAG )
+	{			// date
+	y = YDATE;
+	tbuf[0] = ';' + daytime.wd;
+	snprintf( tbuf+1, sizeof(tbuf), "  %02d:%02d", daytime.md, daytime.mm );
+	GC.vfont = &JVFont26s;
+	w = jlcd_vtext_dx( tbuf );
+	x = xc - ( w / 2 );
+	jlcd_vtext( x, y, tbuf );
+	}
+if	( show_flags & HOUR_FLAG )
+	{			// heure
+	y = YHOUR; 
+	snprintf( tbuf, sizeof(tbuf), "%02d:%02d", daytime.hh, daytime.mn );
+	// calcul largeur pour centrage
+	GC.vfont = &JVFont36n;
+	w = jlcd_vtext_dx( tbuf ) + GC.vfont->sx;
+	GC.vfont = &JVFont19n;
+	w += jlcd_vtext_dx( ":00" );
+	// affichage hh:mn:ss
+	GC.vfont = &JVFont36n;
+	x = xc - ( w / 2 );
+	x = jlcd_vtext( x, y, tbuf );
+	y += (36 - 19);	// compenser difference de hauteur
+	snprintf( tbuf, sizeof(tbuf), ":%02d", daytime.ss );
+	GC.vfont = &JVFont19n;
+	jlcd_vtext( x, y, tbuf );
+	}
+#endif
+// zone gauche
+#ifdef USE_DEMO
+if	( show_flags & DEMO_FLAG )	// page de demo scrollable a gauche
+	demo_draw( idrag.yobj, 0, SCROLL_ZONE_DX );
+else
+#endif
+#ifdef USE_TRANSCRIPT
+if	( show_flags & TRANS_FLAG )	// page de transcript scrollable a gauche
+	transdraw( idrag.yobj );
+else
+#endif
+	{			// ajustement
+	GC.fill_color = ARGB_LIGHTGRAY;
+	jlcd_rect_fill( 0, 0, SCROLL_ZONE_DX + 1, LCD_DY );
+	#ifdef USE_TIME_DATE
+	if	( show_flags & HH_ADJ_FLAG )
+		snprintf( tbuf, sizeof(tbuf), "adj h, %d", daytime.hh );
+	else if	( show_flags & MN_ADJ_FLAG )
+		snprintf( tbuf, sizeof(tbuf), "adj mn, %d", daytime.mn );
+	else if	( show_flags & WD_ADJ_FLAG )
+		snprintf( tbuf, sizeof(tbuf), "adj wd, %d", daytime.wd );
+	else if	( show_flags & MD_ADJ_FLAG )
+		snprintf( tbuf, sizeof(tbuf), "adj md, %d", daytime.md );
+	else if	( show_flags & MM_ADJ_FLAG )
+		snprintf( tbuf, sizeof(tbuf), "adj mm, %d", daytime.mm );
+	else
+	#endif
+	if	( show_flags & MENU_FLAG )
+		// snprintf( tbuf, sizeof(tbuf), menu_label[imenu] );
+		snprintf( tbuf, sizeof(tbuf), "%d %s", imenu, menu_label[imenu] );
+	else	snprintf( tbuf, sizeof(tbuf), "?" );
+	x = y = 20;
+	GC.font = &JFont24; GC.text_color = ARGB_BLACK;
+	jlcd_text( x, y, tbuf );
+	}
+tbuf[0] = 0;
+// auxiliaires divers
+if	( show_flags & LOCPIX_FLAG )	// assistant localisation pixels
+	{
+	snprintf( tbuf, sizeof(tbuf), "%3d %3d", touch->touchX[0], touch->touchY[0] );
+	draw_reticle( touch->touchX[0], touch->touchY[0] );
+	}
+else if	( show_flags & MENU_FLAG )
+	{
+	snprintf( tbuf, sizeof(tbuf), "%d", imenu );
+	}
+else	{
+	#ifdef FLASH_THE_FONTS
+	snprintf( tbuf, sizeof(tbuf), "%d %d", flash_bytes, flash_errs );
+	#else
+	// snprintf( tbuf, sizeof(tbuf), "%d", idrag.vy );
+	#endif
+	}
+if	( tbuf[0] )			// status/debug PROVIZOAR pas clean	
+	{
+	x = SCROLL_ZONE_DX + 12; y = 10;
+	GC.font = &JFont20; GC.text_color = ARGB_BLUE;
+	jlcd_text( x, y, tbuf );
+	}
+
+__HAL_RCC_DMA2D_CLK_DISABLE();
+swap_layer();
+jlcd_reload_shadows();	// mais il faudra attentre bloquante le prochain vblank !!!
+}
+
+// interpreter un simple clic
+void clic_event_call( int x, int y )
+{
+if	( ( x > XBURG ) && ( y < YBURG ) )
+	{
+	if	( show_flags & MENU_FLAG )
+		{			// interpreter choix menu
+		if	( menu_label[imenu][0] == 'F' )
+			init_scroll_zones( DEMO_FLAG );
+		else if	( menu_label[imenu][0] == 'T' )
+			init_scroll_zones( TRANS_FLAG );
+		else	init_zones_default();	// defaut :-(
+		if	( menu_label[imenu][0] == 'L' )
+			show_flags |= LOCPIX_FLAG;
+		unscroll();
+		}
+	else	init_scroll_zones( MENU_FLAG );
+	}
+else	{
+	#ifdef FLASH_THE_FONTS
+	flash_errs = check_the_fonts();
+	#endif
+	}
+}
+
+// interpreter un long clic
+void long_clic_event_call( int x, int y )
+{
+if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
+	{
+	#ifdef FLASH_THE_FONTS
+	flash_bytes = flash_the_fonts();
+	#else
+	jlcd_panel_off();
+	#endif
+	}
+}
+
+int main(void)
+{
+TS_StateTypeDef TS_State;
+int paint_flag, old_second, last_touch_second;
+unsigned int old_ltdc_irq_cnt = 0;
+
+  /* Enable the CPU Cache */
+  CPU_CACHE_Enable();
+
+  /* STM32F7xx HAL library initialization:
+       - Configure the Flash ART accelerator on ITCM interface
+       - Configure the Systick to generate an interrupt each 1 msec
+       - Set NVIC Group Priority to 4
+       - Global MSP (MCU Support Package) initialization
+     */
+  HAL_Init();
+
+// juste pour eteindre le panel
+jlcd_gpio1();
+
+jrtc_init();
+if	( jrtc_is_cold_poweron() )	// N.B. ce test ne marche qu'une fois
+	{
+	daytime.md = 27;
+	daytime.mm = 5;
+	daytime.wd = 1;
+	daytime.hh = 9;
+	daytime.mn = 33;
+	daytime.ss = 44;
+	jrtc_set_day_time( &daytime );
+	}
+
+// sequence d'init rapide :
+SystemClock200_Config();
+#ifndef FLASH_THE_FONTS
+USB_PhyEnterLowPowerMode();
+ETH_PhyEnterPowerDownMode();
+__HAL_RCC_USB_OTG_HS_CLK_DISABLE();
+__HAL_RCC_USB_OTG_HS_ULPI_CLK_DISABLE();
+__HAL_RCC_ETH_CLK_DISABLE();
+#endif
+jlcd_sdram_init();
+jlcd_gpio2();
+jlcd_init();
+// __HAL_RCC_DMA2D_CLK_ENABLE();
+GC_init();
+#ifdef PROFILER_PI2
+GPIO_config_profiler_PI1_PI2();
+#endif
+BSP_TS_Init( LCD_DX, LCD_DY );
+
+// BSP_LED_Init(LED1);
+BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );   
+
+
+idrag_init();
+idrag.yobjmax = 0;
+idrag.yobjmin = -LCD_DY;
+
+init_zones_default();
+
+jlcd_interrupt_on();
+jlcd_panel_on();
+
+while	(1)
+	{
+	paint_flag = 0;
+	// traiter le touch
+	BSP_TS_GetState( &TS_State );
+	if	( TS_State.touchDetected == 1 )
+		{ 					// single touch
+		if	( !jlcd_is_panel_on() )
+			{				// reveil du panel
+			if	( touch_occur_cnt == 0 )
+				{
+				jlcd_panel_on();
+				unscroll();
+				}
+			}
+		else	{
+			++touch_occur_cnt;
+			if	( show_flags & TIME_ADJ_FLAGS )
+				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
+			else if	( TS_State.touchX[0] < SCROLL_ZONE_DX )
+				idrag_event_call( TS_State.touchDetected,	// scroll normal
+						TS_State.touchX[0], TS_State.touchY[0],
+						GC.ltdc_irq_cnt );
+			else	{					// zone de droite
+				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
+				// simple clic zone droite
+				if	( touch_occur_cnt == SHORT_TOUCH_DELAY )
+					clic_event_call( TS_State.touchX[0], TS_State.touchY[0] );
+				else if	( touch_occur_cnt == LONG_TOUCH_DELAY )
+					long_clic_event_call( TS_State.touchX[0], TS_State.touchY[0] );
+				}
+			}
+		paint_flag = 1; last_touch_second = daytime.day_seconds;
+		old_touch_cnt = 1;
+		}
+	else if	( TS_State.touchDetected == 2 )
+		{	// double touch : premier touch a gauche pour passer en adjust
+			// if	( TS_State.touchX[0] < 100 )
+		#ifdef USE_TIME_DATE
+		if	(
+			( old_touch_cnt == 1 ) &&
+			( ( show_flags & TIME_ADJ_FLAGS ) == 0 )
+			)
+			{
+			if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX ) )
+				{ }		// rien
+			else if	( TS_State.touchY[1] > ( YHOUR - 10 ) )
+				{
+				if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 70 ) )
+					show_flags = HH_ADJ_FLAG | HOUR_FLAG;
+				else if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 130 ) )
+					show_flags = MN_ADJ_FLAG | HOUR_FLAG;
+				// else	rien
+				}
+			else if	(  TS_State.touchY[1] > ( YDATE - 10 ) )
+				{
+				if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 90 ) )
+					show_flags = WD_ADJ_FLAG | DATE_FLAG;
+				else if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 135 ) )
+					show_flags = MD_ADJ_FLAG | DATE_FLAG;
+				else	show_flags = MM_ADJ_FLAG | DATE_FLAG;
+				}
+			if	( show_flags & TIME_ADJ_FLAGS )
+				init_scroll_zones( TIME_ADJ_FLAGS );
+			}
+		else	{
+			idrag_event_call( TS_State.touchDetected,
+					  TS_State.touchX[1], TS_State.touchY[1],
+					  GC.ltdc_irq_cnt );
+			}
+		#endif
+		paint_flag = 1; last_touch_second = daytime.day_seconds;
+		old_touch_cnt = 2;
+		}
+	else	{						// zero touch
+		idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );
+		if	( old_touch_cnt )
+			{
+			#ifdef USE_TIME_DATE
+			if	( show_flags & TIME_ADJ_FLAGS )
+				{			// sauver resultat edition
+				jrtc_set_day_time( &daytime );
+							// quitter mode ajust
+				init_zones_default();
+				}
+			#endif
+			}
+		touch_occur_cnt = 0;
+		old_touch_cnt = 0;
+		}
+	// traiter ajustement en cours
+	#ifdef USE_TIME_DATE
+	if	( show_flags & TIME_ADJ_FLAGS )
+		{
+		int v, d;
+		v = idrag.yobjmax - idrag.yobj;		// base zero, inversion de direction
+		d = idrag.yobjmax - idrag.yobjmin;	// denominateur
+		if	( show_flags & HH_ADJ_FLAG )
+			{	// ajuster hh en fonction de yobj
+			v = ( v * 24 ) - 1;			// numerateur facteur d'echelle 
+			v /= d;
+			daytime.hh = v;
+			}
+		else if	( show_flags & MN_ADJ_FLAG )
+			{	// ajuster mn en fonction de yobj
+			v = ( v * 60 ) - 1;			// numerateur facteur d'echelle 
+			v /= d;
+			daytime.mn = v;
+			}
+		else if	( show_flags & WD_ADJ_FLAG )
+			{	// ajuster wd en fonction de yobj
+			v = ( v * 5 ) - 1;			// numerateur facteur d'echelle 
+			v /= d;
+			daytime.wd = v;
+			}
+		else if	( show_flags & MD_ADJ_FLAG )
+			{	// ajuster md en fonction de yobj
+			v = ( v * 31 ) - 1;			// numerateur facteur d'echelle 
+			v /= d;
+			daytime.md = v + 1;
+			}
+		else if	( show_flags & MM_ADJ_FLAG )
+			{	// ajuster mm en fonction de yobj
+			v = ( v * 12 ) - 1;			// numerateur facteur d'echelle 
+			v /= d;
+			daytime.mm = v + 1;
+			}
+		}
+	else
+	#endif
+	if	( show_flags & MENU_FLAG )
+		{
+		int v, d;
+		v = idrag.yobjmax - idrag.yobj;		// base zero, inversion de direction
+		d = idrag.yobjmax - idrag.yobjmin;	// denominateur
+		v = ( v * QMENU ) - 1;			// numerateur facteur d'echelle
+		v /= d;
+		imenu = v % QMENU;
+		}
+	else	{
+		jrtc_get_day_time( &daytime );
+		if	( old_second != daytime.day_seconds )
+			{					// traitement cadence a la seconde
+			#ifdef USE_TRANSCRIPT
+			transprint( "-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
+			#endif
+			paint_flag = 1;
+			old_second = daytime.day_seconds;
+			if	( daytime.day_seconds > ( last_touch_second + UNSCROLL_TIMOUT ) )
+				unscroll();
+			}
+		}
+
+	if	( idrag.drifting )
+		paint_flag = 1;
+	if	( !jlcd_is_panel_on() )
+		paint_flag = 0;
+
+	if	( paint_flag )
+		{
+		repaint( &TS_State );
+		LTDC->SRCR |= LTDC_SRCR_VBR;
+		}
+	#ifdef PROFILER_PI2
+	HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_RESET);	// PI2 aka D8 profiler pin
+	#endif
+
+	#ifdef GREEN_CPU
+	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
+		{
+		#ifdef PROFILER_PI2
+		// LL_GPIO_ResetOutputPin( GPIOI, LL_GPIO_PIN_1 );	// PI1
+		#endif
+		HAL_PWR_EnterSLEEPMode( PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI );
+		#ifdef PROFILER_PI2
+		// LL_GPIO_SetOutputPin( GPIOI, LL_GPIO_PIN_1 );
+		#endif
+		}
+	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
+	#else
+	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
+		{}
+	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
+	#endif
+
+	#ifdef PROFILER_PI2
+	HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_SET);
+	#endif
+	}
+}
+
