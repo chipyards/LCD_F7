@@ -68,15 +68,28 @@ char * menu_label[] = {	// ATTENTION chaque label doit commencer par un caracter
 
 int imenu = 0;
 
-// quelques parametres geometriques de GUI
-#define SCROLL_ZONE_DX 300
-#define SCROLL_ZONE_DY 2000
+// quelques parametres geometriques de GUI (ecran 480*272)
+// Axe X
+#ifdef LEFT_FIX
+#define LEFT_BURG	// justification du burger dans la zone fix
+#define FIX_ZONE_X0 	0
+#define FIX_ZONE_DX	180
+#define SCROLL_ZONE_X0	FIX_ZONE_DX
+#define SCROLL_ZONE_DX	(LCD_DX-FIX_ZONE_DX)
+#else
+#define SCROLL_ZONE_X0	0
+#define SCROLL_ZONE_DX	300
+#define FIX_ZONE_X0 	SCROLL_ZONE_DX
+#define FIX_ZONE_DX	(LCD_DX-SCROLL_ZONE_DX)
+#endif
+// Axe Y
 #define YLOGO 100
+
 #define YDATE 180
 #define YHOUR 220
-#define DBURG 12
-#define XBURG 426
-#define YBURG 48
+
+#define MBURG 12	// marge burger
+#define WBURG 50	// taille burger (w ou h) pour clic
 
 #ifdef FLASH_THE_FONTS
 int flash_bytes = 0;
@@ -139,7 +152,7 @@ switch	( flag )
 	#endif
 	#ifdef USE_TRANSCRIPT
 	case TRANS_FLAG :
-		idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, 0, SCROLL_ZONE_DX );
+		idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 		show_flags = TRANS_FLAG | LOGO_FLAG;
 		#ifdef USE_TIME_DATE
 		show_flags |= ( DATE_FLAG | HOUR_FLAG );
@@ -148,7 +161,7 @@ switch	( flag )
 	#endif
 	#ifdef USE_DEMO
 	case DEMO_FLAG :
-		idrag.yobjmin = LCD_DY - ( SCROLL_ZONE_DY );
+		idrag.yobjmin = LCD_DY - ( DEMO_DY );
 		show_flags = DEMO_FLAG | LOGO_FLAG;
 		#ifdef USE_TIME_DATE
 		show_flags |= ( DATE_FLAG | HOUR_FLAG );
@@ -184,24 +197,29 @@ void repaint( TS_StateTypeDef * touch )
 int xc, x, y, w;
 char tbuf[32];
 __HAL_RCC_DMA2D_CLK_ENABLE();
+// zone FIX ( burger, logo, heure et date ) =====================================
 if	( show_flags & ( LOGO_FLAG | DATE_FLAG | HOUR_FLAG | LOCPIX_FLAG ) )
-	{	// preparer affichage d'elements centres zone droite
-	xc = ( SCROLL_ZONE_DX + LCD_DX ) / 2;
+	{	// preparer affichage d'elements centres zone FIX (no scroll)
+	xc = FIX_ZONE_X0 + ( FIX_ZONE_DX / 2 );	// le centre
 	GC.fill_color = ARGB_WHITE;
-	jlcd_rect_fill( SCROLL_ZONE_DX + 1, 0, LCD_DX - SCROLL_ZONE_DX - 1, LCD_DY );
+	jlcd_rect_fill( FIX_ZONE_X0 + 1, 0, FIX_ZONE_DX - 1, LCD_DY );
 	}
 if	( show_flags & LOGO_FLAG )
 	{
-	snprintf( tbuf, sizeof(tbuf), "<" );		// logo
+	snprintf( tbuf, sizeof(tbuf), "<" );		// logo, centre
 	GC.vfont = &JVFont36n;
 	w = jlcd_vtext_dx( tbuf );
 	x = xc - ( w / 2 );
 	y = YLOGO;
 	jlcd_vtext( x, y, tbuf );
-	snprintf( tbuf, sizeof(tbuf), "=" );		// burger
+	snprintf( tbuf, sizeof(tbuf), "=" );		// burger, cale au bord
 	w = jlcd_vtext_dx( tbuf );
-	x = LCD_DX - w - DBURG;
-	y = DBURG;
+	#ifdef LEFT_BURG
+	x = FIX_ZONE_X0 + MBURG;
+	#else
+	x = FIX_ZONE_X0 + FIX_ZONE_DX - w - MBURG;
+	#endif
+	y = MBURG;
 	jlcd_vtext( x, y, tbuf );
 	}
 #ifdef USE_TIME_DATE
@@ -234,10 +252,10 @@ if	( show_flags & HOUR_FLAG )
 	jlcd_vtext( x, y, tbuf );
 	}
 #endif
-// zone gauche
+// zone SCROLL ==================================================================
 #ifdef USE_DEMO
 if	( show_flags & DEMO_FLAG )	// page de demo scrollable a gauche
-	demo_draw( idrag.yobj, 0, SCROLL_ZONE_DX );
+	demo_draw( idrag.yobj, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 else
 #endif
 #ifdef USE_TRANSCRIPT
@@ -245,32 +263,21 @@ if	( show_flags & TRANS_FLAG )	// page de transcript scrollable a gauche
 	transdraw( idrag.yobj );
 else
 #endif
-	{			// ajustement
+	{				// remplissage par defaut
 	GC.fill_color = ARGB_LIGHTGRAY;
-	jlcd_rect_fill( 0, 0, SCROLL_ZONE_DX + 1, LCD_DY );
-	#ifdef USE_TIME_DATE
-	if	( show_flags & HH_ADJ_FLAG )
-		snprintf( tbuf, sizeof(tbuf), "adj h, %d", daytime.hh );
-	else if	( show_flags & MN_ADJ_FLAG )
-		snprintf( tbuf, sizeof(tbuf), "adj mn, %d", daytime.mn );
-	else if	( show_flags & WD_ADJ_FLAG )
-		snprintf( tbuf, sizeof(tbuf), "adj wd, %d", daytime.wd );
-	else if	( show_flags & MD_ADJ_FLAG )
-		snprintf( tbuf, sizeof(tbuf), "adj md, %d", daytime.md );
-	else if	( show_flags & MM_ADJ_FLAG )
-		snprintf( tbuf, sizeof(tbuf), "adj mm, %d", daytime.mm );
-	else
-	#endif
+	jlcd_rect_fill( SCROLL_ZONE_X0, 0, SCROLL_ZONE_DX, LCD_DY );
+	// menu dans la zone scroll
 	if	( show_flags & MENU_FLAG )
 		// snprintf( tbuf, sizeof(tbuf), menu_label[imenu] );
 		snprintf( tbuf, sizeof(tbuf), "%d %s", imenu, menu_label[imenu] );
-	else	snprintf( tbuf, sizeof(tbuf), "?" );
-	x = y = 20;
+	else	snprintf( tbuf, sizeof(tbuf), "V%s", VERSION );
+	x = SCROLL_ZONE_X0 + 20;
+	y = 20;
 	GC.font = &JFont24; GC.text_color = ARGB_BLACK;
 	jlcd_text( x, y, tbuf );
 	}
+// Auxiliaires (zone FIX) =======================================================
 tbuf[0] = 0;
-// auxiliaires divers
 if	( show_flags & LOCPIX_FLAG )	// assistant localisation pixels
 	{
 	snprintf( tbuf, sizeof(tbuf), "%3d %3d", touch->touchX[0], touch->touchY[0] );
@@ -289,7 +296,8 @@ else	{
 	}
 if	( tbuf[0] )			// status/debug PROVIZOAR pas clean	
 	{
-	x = SCROLL_ZONE_DX + 12; y = 10;
+	x = FIX_ZONE_X0 + 12;
+	y = YLOGO - 40;
 	GC.font = &JFont20; GC.text_color = ARGB_BLUE;
 	jlcd_text( x, y, tbuf );
 	}
@@ -299,13 +307,23 @@ swap_layer();
 jlcd_reload_shadows();	// mais il faudra attentre bloquante le prochain vblank !!!
 }
 
-// interpreter un simple clic
-void clic_event_call( int x, int y )
+// interpreter un simple clic dans la zone FIX
+void clic_fix_event_call( int x, int y )
 {
-if	( ( x > XBURG ) && ( y < YBURG ) )
+if	(
+	#ifdef LEFT_BURG
+	( x < ( FIX_ZONE_X0 + MBURG + WBURG ) )
+	#else
+	( x > ( FIX_ZONE_X0 + FIX_ZONE_DX - MBURG - WBURG ) )
+	#endif
+	&& ( y < ( MBURG + WBURG ) )
+	)
 	{
-	if	( show_flags & MENU_FLAG )
-		{			// interpreter choix menu
+	if	(!( show_flags & MENU_FLAG ))
+		{			// entrer dans le menu
+		init_scroll_zones( MENU_FLAG );
+		}
+	else	{			// interpreter choix menu et sortie
 		if	( menu_label[imenu][0] == 'F' )
 			init_scroll_zones( DEMO_FLAG );
 		else if	( menu_label[imenu][0] == 'T' )
@@ -314,8 +332,7 @@ if	( ( x > XBURG ) && ( y < YBURG ) )
 		if	( menu_label[imenu][0] == 'L' )
 			show_flags |= LOCPIX_FLAG;
 		unscroll();
-		}
-	else	init_scroll_zones( MENU_FLAG );
+		}			// entrer
 	}
 else	{
 	#ifdef FLASH_THE_FONTS
@@ -324,8 +341,8 @@ else	{
 	}
 }
 
-// interpreter un long clic
-void long_clic_event_call( int x, int y )
+// interpreter un long clic dans la zone FIX
+void long_clic_fix_event_call( int x, int y )
 {
 if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
 	{
@@ -420,46 +437,51 @@ while	(1)
 			++touch_occur_cnt;
 			if	( show_flags & TIME_ADJ_FLAGS )
 				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
-			else if	( TS_State.touchX[0] < SCROLL_ZONE_DX )
+			else if	(
+				( TS_State.touchX[0] > FIX_ZONE_X0 ) &&
+				( TS_State.touchX[0] < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
+				)
+				{					// zone FIX =============
+				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
+				if	( touch_occur_cnt == SHORT_TOUCH_DELAY )
+					clic_fix_event_call( TS_State.touchX[0], TS_State.touchY[0] );
+				else if	( touch_occur_cnt == LONG_TOUCH_DELAY )
+					long_clic_fix_event_call( TS_State.touchX[0], TS_State.touchY[0] );
+				}
+			else	{					// zone SCROLL ==========
 				idrag_event_call( TS_State.touchDetected,	// scroll normal
 						TS_State.touchX[0], TS_State.touchY[0],
 						GC.ltdc_irq_cnt );
-			else	{					// zone de droite
-				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
-				// simple clic zone droite
-				if	( touch_occur_cnt == SHORT_TOUCH_DELAY )
-					clic_event_call( TS_State.touchX[0], TS_State.touchY[0] );
-				else if	( touch_occur_cnt == LONG_TOUCH_DELAY )
-					long_clic_event_call( TS_State.touchX[0], TS_State.touchY[0] );
 				}
 			}
 		paint_flag = 1; last_touch_second = daytime.day_seconds;
 		old_touch_cnt = 1;
 		}
 	else if	( TS_State.touchDetected == 2 )
-		{	// double touch : premier touch a gauche pour passer en adjust
-			// if	( TS_State.touchX[0] < 100 )
+		{	// double touch :
+		int x2 = TS_State.touchX[1];
+		int y2 = TS_State.touchY[1];
 		#ifdef USE_TIME_DATE
-		if	(
+		if	(				// gerer l'entree dans un ajustement horaire
 			( old_touch_cnt == 1 ) &&
-			( ( show_flags & TIME_ADJ_FLAGS ) == 0 )
+			( ( show_flags & TIME_ADJ_FLAGS ) == 0 ) &&
+			( x2 > FIX_ZONE_X0 ) &&
+			( x2 < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
 			)
 			{
-			if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX ) )
-				{ }		// rien
-			else if	( TS_State.touchY[1] > ( YHOUR - 10 ) )
+			if	( y2 > ( YHOUR - 10 ) )
 				{
-				if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 70 ) )
+				if	( x2 < ( FIX_ZONE_X0 + 70 ) )
 					show_flags = HH_ADJ_FLAG | HOUR_FLAG;
-				else if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 130 ) )
+				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
 					show_flags = MN_ADJ_FLAG | HOUR_FLAG;
 				// else	rien
 				}
-			else if	(  TS_State.touchY[1] > ( YDATE - 10 ) )
+			else if	( y2 > ( YDATE - 10 ) )
 				{
-				if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 90 ) )
+				if	( x2 < ( FIX_ZONE_X0 + 90 ) )
 					show_flags = WD_ADJ_FLAG | DATE_FLAG;
-				else if	( TS_State.touchX[1] < ( SCROLL_ZONE_DX + 135 ) )
+				else if	( x2 < ( FIX_ZONE_X0 + 135 ) )
 					show_flags = MD_ADJ_FLAG | DATE_FLAG;
 				else	show_flags = MM_ADJ_FLAG | DATE_FLAG;
 				}
@@ -481,7 +503,7 @@ while	(1)
 			{
 			#ifdef USE_TIME_DATE
 			if	( show_flags & TIME_ADJ_FLAGS )
-				{			// sauver resultat edition
+				{			// sauver resultat ajustement
 				jrtc_set_day_time( &daytime );
 							// quitter mode ajust
 				init_zones_default();
