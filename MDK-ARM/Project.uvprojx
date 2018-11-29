@@ -333,7 +333,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--C99</MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F746xx,USE_STM32746G_DISCO</Define>
+              <Define>USE_HAL_DRIVER,STM32F746xx,USE_STM32746G_DISCO,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
               <IncludePath>..\Inc;F:\STM32\Cube7\Drivers\CMSIS\Device\ST\STM32F7xx\Include;F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Inc;F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery;F:\STM32\Cube7\Utilities;F:\STM32\Cube7\Utilities\fonts;F:\STM32\Cube7\Middlewares\Third_Party\FatFs\src;F:\STM32\Cube7\Drivers\BSP\Components;F:\STM32\Cube7\Middlewares\Third_Party\FatFs\src\drivers</IncludePath>
             </VariousControls>
@@ -474,6 +474,21 @@
               <FileType>1</FileType>
               <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_eth.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f7xx_ll_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f7xx_ll_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f7xx_ll_rcc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_rcc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -528,6 +543,21 @@
               <FileName>menu.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>adju.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\adju.c</FilePath>
+            </File>
+            <File>
+              <FileName>uarts.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\uarts.c</FilePath>
+            </File>
+            <File>
+              <FileName>s_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\s_gpio.c</FilePath>
             </File>
           </Files>
         </Group>

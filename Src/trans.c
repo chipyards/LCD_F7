@@ -13,7 +13,7 @@ TRANStype trans;
 // constructeur - rend la hauteur totale de la page scrollable en px
 int transcript_init( const JFONT * lafont, int x0, int dx )
 {
-int a, dy;
+int a;
 trans.x0 = x0;
 trans.dx = dx;
 trans.linelen = dx / lafont->dx;	// caracteres imprimables par ligne
@@ -21,7 +21,7 @@ trans.qlin = TRANSQ / trans.linelen;	// nombre de lignes
 trans.qlinvis = ( LCD_DY / lafont->dy ) + 1;	// nombre de lignes visibles
 trans.jwri = 0;
 trans.font = lafont;
-dy = MTOP + MBOT + trans.qlin * lafont->dy;
+trans.dy = MTOP + MBOT + trans.qlin * lafont->dy;
 for	( a = 0; a < TRANSQ; a += trans.linelen )
 	{
 	trans.circ[a] = 0;	// lignes toutes vides
@@ -29,9 +29,9 @@ for	( a = 0; a < TRANSQ; a += trans.linelen )
 
 transprint( "Transcript V%s", VERSION );
 transprint( " %d bytes, %d wasted", TRANSQ, TRANSQ - ( trans.linelen * trans.qlin ) );
-transprint( " height %d px", dy );
+transprint( " height %d px", trans.dy );
 transprint( " %d lines, pitch %d px", trans.qlin, trans.font->dy );
-return ( dy );
+return ( trans.dy );
 }
 
 // contexte global
@@ -78,6 +78,8 @@ i1 = i0 + trans.qlinvis;
 if	( i1 > trans.qlin )
 	i1 = trans.qlin;
 
+GC.ytop = 0;
+GC.ybot = LCD_DY;
 // element fixe
 GC.fill_color = ARGB_BLACK;
 jlcd_rect_fill( trans.x0, 0, trans.dx, LCD_DY );

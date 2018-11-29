@@ -6,7 +6,7 @@
 #define USE_TRANSCRIPT		// scrollable transcript zone
 #define USE_DEMO		// demo des fonts
 #define USE_TIME_DATE		// affichage de l'heure
-
+#define USE_UART
 // lateralite
 // #define LEFT_FIX
 

@@ -10,6 +10,10 @@
 #include "demo.h"
 #include "trans.h"
 #include "menu.h"
+#include "adju.h"
+#include "s_gpio.h"
+#include "stm32f7xx_ll_usart.h"
+#include "uarts.h"
 #include <stdlib.h>
 
 void USB_PhyEnterLowPowerMode(void);
@@ -17,13 +21,6 @@ void ETH_PhyEnterPowerDownMode(void);
 
 // #define GREEN_CPU	// deporte dans options.h
 // #define PROFILER_PI2	// pin PI2 aka D8 deporte dans options.h
-
-// ----------------------  SysTick ----------------------
-
-void SysTick_Handler(void)
-{
-  HAL_IncTick();
-}
 
 // ---------------------- contexte global ------------------
 
@@ -59,6 +56,14 @@ DAY_TIME daytime;	// le temps sous diverses formes
 
 int kmenu = 0;
 
+#ifdef USE_UART
+// variables pour UART
+volatile int logflag = 0;
+volatile char CDCbuf[128];
+volatile int CDCindex;
+volatile static int ccmd;
+#endif
+
 // quelques parametres geometriques de GUI (ecran 480*272)
 // Axe X
 #ifdef LEFT_FIX
@@ -74,9 +79,9 @@ int kmenu = 0;
 #define FIX_ZONE_DX	(LCD_DX-SCROLL_ZONE_DX)
 #endif
 // Axe Y
-#define YLOGO 100
+#define YLOGO 100	// sommet
 
-#define YDATE 180
+#define YDATE 180	// sommet des lettres
 #define YHOUR 220
 
 #define MBURG 12	// marge burger
@@ -87,23 +92,48 @@ int flash_bytes = 0;
 int flash_errs = 0;
 #endif
 
-// ---------------------- application ----------------------
+// ----------------------  Interrupts ----------------------
 
-#ifdef PROFILER_PI2	// pins PI1 aka D13, PI2 aka D8//
-void GPIO_config_profiler_PI1_PI2(void)
+void SysTick_Handler(void)
 {
-GPIO_InitTypeDef gpio_init_structure;
-/* Enable GPIOs clock */
-__HAL_RCC_GPIOI_CLK_ENABLE();
-HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_RESET);
-HAL_GPIO_WritePin( GPIOI, GPIO_PIN_3, GPIO_PIN_RESET);
-gpio_init_structure.Pin       = GPIO_PIN_1 | GPIO_PIN_2;
-gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
-gpio_init_structure.Pull      = GPIO_NOPULL;
-gpio_init_structure.Speed     = GPIO_SPEED_LOW;
-HAL_GPIO_Init(GPIOI, &gpio_init_structure);
+  HAL_IncTick();
+}
+
+#ifdef USE_UART
+// traitement UARTS
+void USART1_IRQHandler( void )		// UART CDC vers USB
+{
+if	(
+	( LL_USART_IsActiveFlag_TXE( USART1 ) ) &&
+	( LL_USART_IsEnabledIT_TXE( USART1 ) )
+	)
+	{
+	int c;
+	c = CDCbuf[CDCindex++];
+	if	( c )
+		{
+		LL_USART_TransmitData8( USART1, c );
+		}
+	else	{
+		UART1_TX_INT_disable();
+		CDCindex = 0;
+		}
+	}
+if	(
+	( LL_USART_IsActiveFlag_RXNE( USART1 ) ) &&
+	( LL_USART_IsEnabledIT_RXNE( USART1 ) )
+	)
+	{
+	ccmd = LL_USART_ReceiveData8( USART1 );
+	// switch	( ccmd )
+	//	{
+	//	}
+	logflag = 1;
+	}
 }
 #endif
+
+// ---------------------- application ----------------------
 
 // trace reticule
 void draw_reticle( int x, int y )
@@ -117,8 +147,14 @@ void unscroll(void)
 {
 idrag.yobj = 0;
 #ifdef USE_TRANSCRIPT
-if	( show_flags & TRANS_FLAG )
+if	(
+	( show_flags & TRANS_FLAG ) &&
+	( ( show_flags & ( MENU_FLAG | TIME_ADJ_FLAGS ) ) == 0 )
+	)
+	{
+	idrag.yobjmin = LCD_DY - trans.dy;
 	idrag.yobj = idrag.yobjmin;
+	}
 #endif
 #ifdef USE_DEMO
 if	( show_flags & DEMO_FLAG )
@@ -133,14 +169,9 @@ void init_scroll_zones( int flag )
 switch	( flag )
 	{
 	case MENU_FLAG :
-		idrag.yobjmin = LCD_DY - menu.dy;
+		idrag.yobjmin = - menu.ty;
 		show_flags |= MENU_FLAG;
 		break;
-	#ifdef USE_TIME_DATE
-	case TIME_ADJ_FLAGS :
-		idrag.yobjmin = -( LCD_DY * 2 );
-		break;
-	#endif
 	#ifdef USE_TRANSCRIPT
 	case TRANS_FLAG :
 		idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
@@ -252,7 +283,9 @@ if	( show_flags & HOUR_FLAG )
 	snprintf( tbuf, sizeof(tbuf), ":%02d", daytime.ss );
 	GC.vfont = &JVFont19n;
 	jlcd_vtext( x, y, tbuf );
-	}
+	}			// overlay d'ajustement
+if	( show_flags & TIME_ADJ_FLAGS )
+	adju_draw( idrag.yobj );
 #endif
 // zone SCROLL ==================================================================
 if	( show_flags & MENU_FLAG )	// le menu scrollatif (prempte les autres)
@@ -412,6 +445,10 @@ BSP_TS_Init( LCD_DX, LCD_DY );
 // BSP_LED_Init(LED1);
 BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );   
 
+#ifdef USE_UART
+GPIO_config_uart1();
+UART1_init(9600);
+#endif
 
 idrag_init();
 idrag.yobjmax = 0;
@@ -468,7 +505,7 @@ while	(1)
 		int y2 = TS_State.touchY[1];
 		#ifdef USE_TIME_DATE
 		if	(				// gerer l'entree dans un ajustement horaire
-			( old_touch_cnt == 1 ) &&
+			( old_touch_cnt == 1 ) &&	// one_shot
 			( ( show_flags & TIME_ADJ_FLAGS ) == 0 ) &&
 			( x2 > FIX_ZONE_X0 ) &&
 			( x2 < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
@@ -477,21 +514,39 @@ while	(1)
 			if	( y2 > ( YHOUR - 10 ) )
 				{
 				if	( x2 < ( FIX_ZONE_X0 + 70 ) )
-					show_flags = HH_ADJ_FLAG | HOUR_FLAG;
+					{
+					show_flags |= ( HH_ADJ_FLAG | HOUR_FLAG );
+					adju_start( &JFont20, FIX_ZONE_X0+20, YHOUR-7, 44, 50, 0, 24 );
+					idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+					}
 				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
-					show_flags = MN_ADJ_FLAG | HOUR_FLAG;
+					{
+					show_flags |= ( MN_ADJ_FLAG | HOUR_FLAG );
+					adju_start( &JFont20, FIX_ZONE_X0+79, YHOUR-7, 44, 50, 0, 60 );
+					idrag.yobjmin = - adj.ty;
+					}
 				// else	rien
 				}
 			else if	( y2 > ( YDATE - 10 ) )
 				{
 				if	( x2 < ( FIX_ZONE_X0 + 90 ) )
-					show_flags = WD_ADJ_FLAG | DATE_FLAG;
-				else if	( x2 < ( FIX_ZONE_X0 + 135 ) )
-					show_flags = MD_ADJ_FLAG | DATE_FLAG;
-				else	show_flags = MM_ADJ_FLAG | DATE_FLAG;
+					{
+					show_flags |= WD_ADJ_FLAG | DATE_FLAG;
+					adju_start( &JFont20, FIX_ZONE_X0+8, YDATE-9, 85, 50, 0, 5 );
+					idrag.yobjmin = - adj.ty;
+					}
+				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
+					{
+					show_flags |= MD_ADJ_FLAG | DATE_FLAG;
+					adju_start( &JFont20, FIX_ZONE_X0+90, YDATE-9, 38, 50, 1, 32 );
+					idrag.yobjmin = - adj.ty;
+					}
+				else	{
+					show_flags |= MM_ADJ_FLAG | DATE_FLAG;
+					adju_start( &JFont20, FIX_ZONE_X0+135, YDATE-9, 38, 50, 1, 13 );
+					idrag.yobjmin = - adj.ty;
+					}
 				}
-			if	( show_flags & TIME_ADJ_FLAGS )
-				init_scroll_zones( TIME_ADJ_FLAGS );
 			}
 		else	{
 			idrag_event_call( TS_State.touchDetected,
@@ -509,69 +564,41 @@ while	(1)
 			#ifdef USE_TIME_DATE
 			if	( show_flags & TIME_ADJ_FLAGS )
 				{			// sauver resultat ajustement
+				switch	( show_flags & TIME_ADJ_FLAGS )
+					{
+					case HH_ADJ_FLAG: daytime.hh = adj.val; break;
+					case MN_ADJ_FLAG: daytime.mn = adj.val; break;
+					case WD_ADJ_FLAG: daytime.wd = adj.val; break;
+					case MD_ADJ_FLAG: daytime.md = adj.val; break;
+					case MM_ADJ_FLAG: daytime.mm = adj.val; break;
+					}
 				jrtc_set_day_time( &daytime );
 							// quitter mode ajust
-				init_zones_default();
+				show_flags &= ~TIME_ADJ_FLAGS;
+				unscroll();
 				}
 			#endif
 			}
 		touch_occur_cnt = 0;
 		old_touch_cnt = 0;
+		} // if	TS_State.touchDetected 1, 2 ou 0
+	jrtc_get_day_time( &daytime );
+	if	( old_second != daytime.day_seconds )
+		{					// traitement cadence a la seconde
+		#ifdef USE_TRANSCRIPT
+		transprint( "-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
+		#endif
+		#ifdef USE_UART
+		snprintf( (char *)CDCbuf, sizeof( CDCbuf ),
+			  "-> %02d show %08x\r\n", daytime.ss, show_flags );
+		UART1_TX_INT_enable();
+		#endif
+		paint_flag = 1;
+		old_second = daytime.day_seconds;
+		if	( daytime.day_seconds > ( last_touch_second + UNSCROLL_TIMOUT ) )
+			unscroll();
 		}
-	// traiter ajustement en cours
-	#ifdef USE_TIME_DATE
-	if	( show_flags & TIME_ADJ_FLAGS )
-		{
-		int v, d;
-		v = idrag.yobjmax - idrag.yobj;		// base zero, inversion de direction
-		d = idrag.yobjmax - idrag.yobjmin;	// denominateur
-		if	( show_flags & HH_ADJ_FLAG )
-			{	// ajuster hh en fonction de yobj
-			v = ( v * 24 ) - 1;			// numerateur facteur d'echelle 
-			v /= d;
-			daytime.hh = v;
-			}
-		else if	( show_flags & MN_ADJ_FLAG )
-			{	// ajuster mn en fonction de yobj
-			v = ( v * 60 ) - 1;			// numerateur facteur d'echelle 
-			v /= d;
-			daytime.mn = v;
-			}
-		else if	( show_flags & WD_ADJ_FLAG )
-			{	// ajuster wd en fonction de yobj
-			v = ( v * 5 ) - 1;			// numerateur facteur d'echelle 
-			v /= d;
-			daytime.wd = v;
-			}
-		else if	( show_flags & MD_ADJ_FLAG )
-			{	// ajuster md en fonction de yobj
-			v = ( v * 31 ) - 1;			// numerateur facteur d'echelle 
-			v /= d;
-			daytime.md = v + 1;
-			}
-		else if	( show_flags & MM_ADJ_FLAG )
-			{	// ajuster mm en fonction de yobj
-			v = ( v * 12 ) - 1;			// numerateur facteur d'echelle 
-			v /= d;
-			daytime.mm = v + 1;
-			}
-		}
-	else
-	#endif
-		{
-		jrtc_get_day_time( &daytime );
-		if	( old_second != daytime.day_seconds )
-			{					// traitement cadence a la seconde
-			#ifdef USE_TRANSCRIPT
-			transprint( "-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
-			#endif
-			paint_flag = 1;
-			old_second = daytime.day_seconds;
-			if	( daytime.day_seconds > ( last_touch_second + UNSCROLL_TIMOUT ) )
-				unscroll();
-			}
-		}
-
+	
 	if	( idrag.drifting )
 		paint_flag = 1;
 	if	( !jlcd_is_panel_on() )

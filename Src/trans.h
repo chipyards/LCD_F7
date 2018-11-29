@@ -9,6 +9,7 @@
 typedef struct {
 int x0;			// bord gauche en px
 int dx;			// largeur en px
+int dy;			// hauteur totale
 int linelen;		// caracteres par ligne
 int qlin;		// nombre de lignes
 int qlinvis;		// nombre de lignes visibles, meme partiellement
@@ -16,6 +17,9 @@ int jwri;		// prochaine ligne a ecrire
 const JFONT * font;
 char circ[TRANSQ];	// buffer circulaire
 } TRANStype;
+
+// contexte global
+extern TRANStype trans;
 
 // constructeur
 int transcript_init( const JFONT * lafont, int x0, int dx );
