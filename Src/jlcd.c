@@ -544,6 +544,36 @@ for	( curpixel = 0; curpixel <= num_pixels; curpixel++ )
 	y += yinc2;
 	}
 }
+
+// tracer une fleche vers la droite pour index visuel
+// supporte yclip, utilise GC.line_color
+// y est l'ordonnee de l'axe de symetrie
+// w est la largeur totale, doit etre > h sinon on ne voit rien
+// l'"epaisseur" horizontale est w-h
+void draw_r_arrow( int x, int y, int w, int h )
+{
+int i;
+// ligne mediane
+h >>= 1;		// demi hauteur
+w -= ( h << 1 );	// longueur de chaque ligne
+jlcd_yclip_hline( x+2*h, y, w );
+for	( i = 1; i <= h; ++i )
+	{
+	jlcd_yclip_hline( x+2*(h-i), y-i, w );
+	jlcd_yclip_hline( x+2*(h-i), y+i, w );
+	}
+}
+
+void draw_centered_text( int x, int y, int len, const char * txt )
+{
+x -= ( ( len * GC.font->dx ) >> 1 );
+while	( len-- )
+	{
+	jlcd_yclip_char( x, y, *(txt++) );
+	x += GC.font->dx;
+	}
+}
+
 // ======================== initialisation ==================================
 
 /* Display enable pin */

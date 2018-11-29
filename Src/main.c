@@ -9,6 +9,7 @@
 #include "idrag.h"
 #include "demo.h"
 #include "trans.h"
+#include "menu.h"
 #include <stdlib.h>
 
 void USB_PhyEnterLowPowerMode(void);
@@ -56,17 +57,7 @@ DAY_TIME daytime;	// le temps sous diverses formes
 #define SHORT_TOUCH_DELAY	3	// en frames
 #define LONG_TOUCH_DELAY	120	// en frames
 
-char * menu_label[] = {	// ATTENTION chaque label doit commencer par un caractere unique !!!!
-#ifdef USE_TRANSCRIPT
-	"TRANSCRIPT",
-#endif
-#ifdef USE_DEMO
-	"FONTS DEMO",
-#endif
-	"LOCPIX" };
-#define QMENU	(sizeof(menu_label)/sizeof(char *))
-
-int imenu = 0;
+int kmenu = 0;
 
 // quelques parametres geometriques de GUI (ecran 480*272)
 // Axe X
@@ -142,8 +133,8 @@ void init_scroll_zones( int flag )
 switch	( flag )
 	{
 	case MENU_FLAG :
-		idrag.yobjmin = -LCD_DY;
-		show_flags = MENU_FLAG | LOGO_FLAG;
+		idrag.yobjmin = LCD_DY - menu.dy;
+		show_flags |= MENU_FLAG;
 		break;
 	#ifdef USE_TIME_DATE
 	case TIME_ADJ_FLAGS :
@@ -161,7 +152,7 @@ switch	( flag )
 	#endif
 	#ifdef USE_DEMO
 	case DEMO_FLAG :
-		idrag.yobjmin = LCD_DY - ( DEMO_DY );
+		idrag.yobjmin = LCD_DY - DEMO_DY;
 		show_flags = DEMO_FLAG | LOGO_FLAG;
 		#ifdef USE_TIME_DATE
 		show_flags |= ( DATE_FLAG | HOUR_FLAG );
@@ -182,14 +173,25 @@ unscroll();
 void init_zones_default(void)
 {
 init_scroll_zones( 0 );
-#ifdef USE_TRANSCRIPT
-init_scroll_zones( TRANS_FLAG );
-#endif
 #ifdef USE_DEMO
 init_scroll_zones( DEMO_FLAG );
 #endif
+#ifdef USE_TRANSCRIPT
+init_scroll_zones( TRANS_FLAG );
+#endif
 }
 
+void create_menu( void )
+{
+menu_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+#ifdef USE_TRANSCRIPT
+menu_add( TRANS_FLAG, "TRANSCRIPT" );
+#endif
+#ifdef USE_DEMO
+menu_add( DEMO_FLAG, "FONTS DEMO" );
+#endif
+menu_add( LOCPIX_FLAG, "LOCPIX" );
+}
 
 // toutes les operations de trace
 void repaint( TS_StateTypeDef * touch )
@@ -253,6 +255,9 @@ if	( show_flags & HOUR_FLAG )
 	}
 #endif
 // zone SCROLL ==================================================================
+if	( show_flags & MENU_FLAG )	// le menu scrollatif (prempte les autres)
+	kmenu = menu_draw( idrag.yobj ); 
+else
 #ifdef USE_DEMO
 if	( show_flags & DEMO_FLAG )	// page de demo scrollable a gauche
 	demo_draw( idrag.yobj, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
@@ -266,11 +271,7 @@ else
 	{				// remplissage par defaut
 	GC.fill_color = ARGB_LIGHTGRAY;
 	jlcd_rect_fill( SCROLL_ZONE_X0, 0, SCROLL_ZONE_DX, LCD_DY );
-	// menu dans la zone scroll
-	if	( show_flags & MENU_FLAG )
-		// snprintf( tbuf, sizeof(tbuf), menu_label[imenu] );
-		snprintf( tbuf, sizeof(tbuf), "%d %s", imenu, menu_label[imenu] );
-	else	snprintf( tbuf, sizeof(tbuf), "V%s", VERSION );
+	snprintf( tbuf, sizeof(tbuf), "V%s", VERSION );
 	x = SCROLL_ZONE_X0 + 20;
 	y = 20;
 	GC.font = &JFont24; GC.text_color = ARGB_BLACK;
@@ -285,7 +286,7 @@ if	( show_flags & LOCPIX_FLAG )	// assistant localisation pixels
 	}
 else if	( show_flags & MENU_FLAG )
 	{
-	snprintf( tbuf, sizeof(tbuf), "%d", imenu );
+	snprintf( tbuf, sizeof(tbuf), "%d", kmenu );
 	}
 else	{
 	#ifdef FLASH_THE_FONTS
@@ -321,16 +322,19 @@ if	(
 	{
 	if	(!( show_flags & MENU_FLAG ))
 		{			// entrer dans le menu
-		init_scroll_zones( MENU_FLAG );
+		init_scroll_zones( MENU_FLAG );	// NB les autres flags ne sont pas effaces
 		}
 	else	{			// interpreter choix menu et sortie
-		if	( menu_label[imenu][0] == 'F' )
-			init_scroll_zones( DEMO_FLAG );
-		else if	( menu_label[imenu][0] == 'T' )
-			init_scroll_zones( TRANS_FLAG );
-		else	init_zones_default();	// defaut :-(
-		if	( menu_label[imenu][0] == 'L' )
-			show_flags |= LOCPIX_FLAG;
+		show_flags &= ~MENU_FLAG;
+		switch	( kmenu )
+			{
+			case DEMO_FLAG:
+				init_scroll_zones( DEMO_FLAG ); break;
+			case TRANS_FLAG:
+				init_scroll_zones( TRANS_FLAG ); break;
+			case LOCPIX_FLAG:
+				show_flags ^= LOCPIX_FLAG; break;
+			}
 		unscroll();
 		}			// entrer
 	}
@@ -413,7 +417,8 @@ idrag_init();
 idrag.yobjmax = 0;
 idrag.yobjmin = -LCD_DY;
 
-init_zones_default();
+create_menu();
+init_zones_default();	// doit etre APRES create_menu
 
 jlcd_interrupt_on();
 jlcd_panel_on();
@@ -553,16 +558,7 @@ while	(1)
 		}
 	else
 	#endif
-	if	( show_flags & MENU_FLAG )
 		{
-		int v, d;
-		v = idrag.yobjmax - idrag.yobj;		// base zero, inversion de direction
-		d = idrag.yobjmax - idrag.yobjmin;	// denominateur
-		v = ( v * QMENU ) - 1;			// numerateur facteur d'echelle
-		v /= d;
-		imenu = v % QMENU;
-		}
-	else	{
 		jrtc_get_day_time( &daytime );
 		if	( old_second != daytime.day_seconds )
 			{					// traitement cadence a la seconde

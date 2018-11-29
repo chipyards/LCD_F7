@@ -1,4 +1,4 @@
-#define VERSION "3.4"
+#define VERSION "3.5"
 
 // #define GREEN_CPU		// sleep dans main loop
 
@@ -8,7 +8,7 @@
 #define USE_TIME_DATE		// affichage de l'heure
 
 // lateralite
-#define LEFT_FIX
+// #define LEFT_FIX
 
 // utilitaires
 // #define PROFILER_PI2	// pins PI1 aka D13, PI2 aka D8

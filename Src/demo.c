@@ -5,34 +5,6 @@
 #include "jlcd.h"
 #include "demo.h"
 
-// tracer une fleche vers la droite pour index visuel
-// supporte yclip, utilise GC.line_color
-// y est l'ordonnee de l'axe de symetrie
-// w est la largeur totale, doit etre > h sinon on ne voit rien
-// l'"epaisseur" horizontale est w-h
-void draw_r_arrow( int x, int y, int w, int h )
-{
-int i;
-// ligne mediane
-h >>= 1;		// demi hauteur
-w -= ( h << 1 );	// longueur de chaque ligne
-jlcd_yclip_hline( x+2*h, y, w );
-for	( i = 1; i <= h; ++i )
-	{
-	jlcd_yclip_hline( x+2*(h-i), y-i, w );
-	jlcd_yclip_hline( x+2*(h-i), y+i, w );
-	}
-}
-
-void draw_centered_text( int x, int y, int len, const char * txt )
-{
-x -= ( ( len * GC.font->dx ) >> 1 );
-while	( len-- )
-	{
-	jlcd_yclip_char( x, y, *(txt++) );
-	x += GC.font->dx;
-	}
-}
 
 // rend une couleur selon code resistances
 unsigned int resistocolor( int i )
@@ -65,11 +37,6 @@ GC.fill_color = ARGB_WHITE;
 jlcd_rect_fill( xs, 0, dx, LCD_DY );
 GC.line_color = ARGB_BLACK;
 jlcd_vline( xs, 0, LCD_DY );
-// tracer l'index
-ys = LCD_DY / 2;
-GC.line_color = ARGB_RED;
-draw_r_arrow( xs, ys, 24, 12 );
-
 
 // a partir d'ici, les elements scrollables
 // fonctions _yclip obligatoires

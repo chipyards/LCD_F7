@@ -164,6 +164,12 @@ void jlcd_yclip_hline( int x, int y, int w );
 // ligne verticale en ARGB8888 (bloquant) avec clip y
 void jlcd_yclip_vline( int x, int y, int h );
 
+// tracer une fleche vers la droite pour index, clip y, GC.line_color
+void draw_r_arrow( int x, int y, int w, int h );
+
+// texte centre, clip y
+void draw_centered_text( int x, int y, int len, const char * txt );
+
 #ifdef FLASH_THE_FONTS
 unsigned int flash_the_fonts(void);
 unsigned int check_the_fonts(void);
