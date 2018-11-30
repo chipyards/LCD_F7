@@ -32,8 +32,14 @@ menu.ty = ( menu.qitem - 1 ) * menu.font->dy;
 int menu_draw( int ypos )
 {
 int i, xs, ys, y0, y1, iselect;
+menu.last_ypos = ypos;
+
+// obligatoire pour toute page utilisant des fonctions _yclip
+GC.ytop = 0;
+GC.ybot = LCD_DY;
+
 // element fixe
-GC.fill_color = ARGB_BLACK;
+GC.fill_color = ARGB_DARKGRAY;
 jlcd_rect_fill( menu.x0, 0, menu.dx, LCD_DY );
 GC.line_color = ARGB_RED;
 draw_r_arrow( menu.x0, MENUMY, MENUMX-2, 12 );
@@ -44,7 +50,6 @@ y0 = MENUMY - menu.font->dy + 5;	// top de zone select
 y1 = MENUMY + 3;			// bottom de zone select
 xs = menu.x0 + MENUMX;		// screen coord
 ys = MENUMY + 3 - menu.font->dy/2 + ypos;
-GC.text_color = ARGB_YELLOW;
 GC.font = menu.font;
 iselect = -1;
 for	( i = 0; i < menu.qitem; ++i )

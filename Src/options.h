@@ -17,3 +17,6 @@
 // #define COMPILE_THE_FONTS
 // #define FLASH_THE_FONTS	// seulement 1 fois, sur carte neuve
 
+#ifndef INT_MAX
+#define INT_MAX 0x7FFFFFFF
+#endif

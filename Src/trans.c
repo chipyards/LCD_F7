@@ -22,6 +22,7 @@ trans.qlinvis = ( LCD_DY / lafont->dy ) + 1;	// nombre de lignes visibles
 trans.jwri = 0;
 trans.font = lafont;
 trans.dy = MTOP + MBOT + trans.qlin * lafont->dy;
+trans.last_ypos = 0;
 for	( a = 0; a < TRANSQ; a += trans.linelen )
 	{
 	trans.circ[a] = 0;	// lignes toutes vides
@@ -71,6 +72,8 @@ int j;		// index de ligne dans le buffer circulaire
 int ali, aca;	// index dans trans.circ[a]
 char c;
 
+trans.last_ypos = ypos;
+
 i0 = ( - ypos - MTOP ) / trans.font->dy;
 if	( i0 < 0 )
 	i0 = 0;
@@ -78,8 +81,10 @@ i1 = i0 + trans.qlinvis;
 if	( i1 > trans.qlin )
 	i1 = trans.qlin;
 
+// obligatoire pour toute page utilisant des fonctions _yclip
 GC.ytop = 0;
 GC.ybot = LCD_DY;
+
 // element fixe
 GC.fill_color = ARGB_BLACK;
 jlcd_rect_fill( trans.x0, 0, trans.dx, LCD_DY );

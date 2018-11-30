@@ -14,6 +14,7 @@ typedef struct {
 int x0;			// bord gauche en px
 int dx;			// largeur en px
 int ty;			// amplitude translation verticale
+int last_ypos;		// a utiliser en cas de gel du scroll
 const JFONT * font;
 int qitem;		// nombre d'items
 MENUITEMtype item[MENUQ];

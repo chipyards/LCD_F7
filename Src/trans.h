@@ -14,6 +14,7 @@ int linelen;		// caracteres par ligne
 int qlin;		// nombre de lignes
 int qlinvis;		// nombre de lignes visibles, meme partiellement
 int jwri;		// prochaine ligne a ecrire
+int last_ypos;		// a utiliser en cas de gel du scroll
 const JFONT * font;
 char circ[TRANSQ];	// buffer circulaire
 } TRANStype;

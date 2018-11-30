@@ -132,7 +132,8 @@ switch	( flag )
 		break;
 	#ifdef USE_TRANSCRIPT
 	case TRANS_FLAG :
-		idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+		// idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+		idrag.yobjmin = LCD_DY - trans.dy;
 		show_flags = TRANS_FLAG | LOGO_FLAG;
 		#ifdef USE_TIME_DATE
 		show_flags |= ( DATE_FLAG | HOUR_FLAG );
@@ -247,16 +248,24 @@ if	( show_flags & TIME_ADJ_FLAGS )
 #endif
 // zone SCROLL ==================================================================
 if	( show_flags & MENU_FLAG )	// le menu scrollatif (prempte les autres)
-	kmenu = menu_draw( idrag.yobj ); 
+	{
+	if	( show_flags & TIME_ADJ_FLAGS )
+		kmenu = menu_draw( menu.last_ypos );
+	else	kmenu = menu_draw( idrag.yobj );
+	}
 else
 #ifdef USE_DEMO
-if	( show_flags & DEMO_FLAG )	// page de demo scrollable a gauche
+if	( show_flags & DEMO_FLAG )	// page de demo scrollable
 	demo_draw( idrag.yobj, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 else
 #endif
 #ifdef USE_TRANSCRIPT
-if	( show_flags & TRANS_FLAG )	// page de transcript scrollable a gauche
-	transdraw( idrag.yobj );
+if	( show_flags & TRANS_FLAG )	// page de transcript scrollable
+	{
+	if	( show_flags & TIME_ADJ_FLAGS )
+		transdraw( trans.last_ypos );
+	else	transdraw( idrag.yobj );
+	}
 else
 #endif
 	{				// remplissage par defaut
@@ -412,6 +421,7 @@ idrag.yobjmax = 0;
 idrag.yobjmin = -LCD_DY;
 
 create_menu();
+transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 init_zones_default();	// doit etre APRES create_menu
 
 jlcd_interrupt_on();
@@ -547,7 +557,8 @@ while	(1)
 		transprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
 		#ifdef USE_UART1
-		CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
+		// CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
+		CDC_print("-> %02d show %8d\r\n", daytime.ss, menu.last_ypos );
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;

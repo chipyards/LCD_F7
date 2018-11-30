@@ -33,8 +33,10 @@ int is;			// indice slot
 int dy = 32;			// pour motif repetitif
 char tbuf[40];
 
+// obligatoire pour toute page utilisant des fonctions _yclip
 GC.ytop = 0;
 GC.ybot = LCD_DY;
+
 // tracer 2 ou 3 elements qui n'ont pas besoin de scroller
 GC.fill_color = ARGB_WHITE;
 jlcd_rect_fill( xs, 0, dx, LCD_DY );
