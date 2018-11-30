@@ -14,6 +14,7 @@
 #include "s_gpio.h"
 #include "stm32f7xx_ll_usart.h"
 #include "uarts.h"
+#include "param.h"
 #include <stdlib.h>
 
 void USB_PhyEnterLowPowerMode(void);
@@ -28,6 +29,7 @@ void ETH_PhyEnterPowerDownMode(void);
 #define DEMO_FLAG	1	// zone de scroll
 #define TRANS_FLAG	2
 #define MENU_FLAG	4
+#define PARAM_FLAG	8
 
 #define LOGO_FLAG	0x10	// zone fixe
 #define DATE_FLAG	0x20
@@ -101,22 +103,26 @@ jlcd_hline( 0, y, LCD_DX );
 jlcd_vline( x, 0, LCD_DY );
 }
 
+// mise a jour de idrag.yobjmin et position par defaut
 void unscroll(void)
 {
-idrag.yobj = 0;
+idrag.yobj = 0;	//pour prersque tous les cas
+if	( show_flags & MENU_FLAG )
+	idrag.yobjmin = - menu.ty;
+else
 #ifdef USE_TRANSCRIPT
-if	(
-	( show_flags & TRANS_FLAG ) &&
-	( ( show_flags & ( MENU_FLAG | TIME_ADJ_FLAGS ) ) == 0 )
-	)
-	{
-	idrag.yobjmin = LCD_DY - trans.dy;
-	idrag.yobj = idrag.yobjmin;
-	}
+if	( show_flags & TRANS_FLAG )
+	{ idrag.yobjmin = LCD_DY - trans.dy; idrag.yobj = idrag.yobjmin; }
+else	
+#endif
+#ifdef USE_PARAM
+if	( show_flags & PARAM_FLAG )
+	idrag.yobjmin = LCD_DY - para.dy;
+else		
 #endif
 #ifdef USE_DEMO
 if	( show_flags & DEMO_FLAG )
-	idrag.yobj = 0;
+	idrag.yobjmin = LCD_DY - DEMO_DY;
 #endif
 }
 
@@ -127,44 +133,36 @@ void init_scroll_zones( int flag )
 switch	( flag )
 	{
 	case MENU_FLAG :
-		idrag.yobjmin = - menu.ty;
 		show_flags |= MENU_FLAG;
 		break;
-	#ifdef USE_TRANSCRIPT
 	case TRANS_FLAG :
-		// idrag.yobjmin = LCD_DY - transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
-		idrag.yobjmin = LCD_DY - trans.dy;
 		show_flags = TRANS_FLAG | LOGO_FLAG;
-		#ifdef USE_TIME_DATE
-		show_flags |= ( DATE_FLAG | HOUR_FLAG );
-		#endif
 		break;
-	#endif
-	#ifdef USE_DEMO
+	case PARAM_FLAG :
+		show_flags = PARAM_FLAG | LOGO_FLAG;
+		break;
 	case DEMO_FLAG :
-		idrag.yobjmin = LCD_DY - DEMO_DY;
 		show_flags = DEMO_FLAG | LOGO_FLAG;
-		#ifdef USE_TIME_DATE
-		show_flags |= ( DATE_FLAG | HOUR_FLAG );
-		#endif
 		break;
-	#endif
 	default:
 		show_flags = LOGO_FLAG;
-		#ifdef USE_TIME_DATE
-		show_flags |= ( DATE_FLAG | HOUR_FLAG );
-		#endif
 	}
+#ifdef USE_TIME_DATE
+show_flags |= ( DATE_FLAG | HOUR_FLAG );
+#endif
 unscroll();
 }
 
 // initialise par defaut en fonction des options
-// le dernier element est prioritaire
+// le dernier element est affiche par defaut
 void init_zones_default(void)
 {
 init_scroll_zones( 0 );
 #ifdef USE_DEMO
 init_scroll_zones( DEMO_FLAG );
+#endif
+#ifdef USE_PARAM
+init_scroll_zones( PARAM_FLAG );
 #endif
 #ifdef USE_TRANSCRIPT
 init_scroll_zones( TRANS_FLAG );
@@ -179,6 +177,9 @@ menu_add( TRANS_FLAG, "TRANSCRIPT" );
 #endif
 #ifdef USE_DEMO
 menu_add( DEMO_FLAG, "FONTS DEMO" );
+#endif
+#ifdef USE_PARAM
+menu_add( PARAM_FLAG, "PARAMETRES" );
 #endif
 menu_add( LOCPIX_FLAG, "LOCPIX" );
 }
@@ -268,6 +269,15 @@ if	( show_flags & TRANS_FLAG )	// page de transcript scrollable
 	}
 else
 #endif
+#ifdef USE_PARAM
+if	( show_flags & PARAM_FLAG )	// page de parametres scrollable
+	{
+	if	( show_flags & TIME_ADJ_FLAGS )
+		param_draw( para.last_ypos );
+	else	param_draw( idrag.yobj );
+	}
+else
+#endif
 	{				// remplissage par defaut
 	GC.fill_color = ARGB_LIGHTGRAY;
 	jlcd_rect_fill( SCROLL_ZONE_X0, 0, SCROLL_ZONE_DX, LCD_DY );
@@ -329,9 +339,9 @@ if	(
 		switch	( kmenu )
 			{
 			case DEMO_FLAG:
-				init_scroll_zones( DEMO_FLAG ); break;
 			case TRANS_FLAG:
-				init_scroll_zones( TRANS_FLAG ); break;
+			case PARAM_FLAG:
+				init_scroll_zones( kmenu ); break;
 			case LOCPIX_FLAG:
 				show_flags ^= LOCPIX_FLAG; break;
 			}
@@ -421,7 +431,12 @@ idrag.yobjmax = 0;
 idrag.yobjmin = -LCD_DY;
 
 create_menu();
+#ifdef USE_TRANSCRIPT
 transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+#endif
+#ifdef USE_PARAM
+param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+#endif
 init_zones_default();	// doit etre APRES create_menu
 
 jlcd_interrupt_on();
@@ -444,7 +459,12 @@ while	(1)
 			}
 		else	{
 			++touch_occur_cnt;
-			if	( show_flags & TIME_ADJ_FLAGS )
+			if	(
+				( show_flags & TIME_ADJ_FLAGS )
+				#ifdef USE_PARAM
+				|| ( ( show_flags & PARAM_FLAG ) && ( para.editing ) )
+				#endif
+				)
 				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
 			else if	(
 				( TS_State.touchX[0] > FIX_ZONE_X0 ) &&
@@ -461,6 +481,10 @@ while	(1)
 				idrag_event_call( TS_State.touchDetected,	// scroll normal
 						TS_State.touchX[0], TS_State.touchY[0],
 						GC.ltdc_irq_cnt );
+				#ifdef USE_PARAM
+				if	( ( touch_occur_cnt == SHORT_TOUCH_DELAY ) && ( show_flags & PARAM_FLAG ) )
+					param_select( TS_State.touchY[0] );
+				#endif
 				}
 			}
 		paint_flag = 1; last_touch_second = daytime.day_seconds;
@@ -474,6 +498,7 @@ while	(1)
 		if	(				// gerer l'entree dans un ajustement horaire
 			( old_touch_cnt == 1 ) &&	// one_shot
 			( ( show_flags & TIME_ADJ_FLAGS ) == 0 ) &&
+			( ( show_flags & PARAM_FLAG ) == 0 ) &&
 			( x2 > FIX_ZONE_X0 ) &&
 			( x2 < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
 			)
@@ -515,7 +540,15 @@ while	(1)
 					}
 				}
 			}
-		else	{
+		else
+		#ifdef USE_PARAM
+		if	( ( old_touch_cnt == 1 ) && ( show_flags & PARAM_FLAG ) )
+			{
+			param_start();
+			idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+			}
+		#endif
+			{
 			idrag_event_call( TS_State.touchDetected,
 					  TS_State.touchX[1], TS_State.touchY[1],
 					  GC.ltdc_irq_cnt );
@@ -546,6 +579,15 @@ while	(1)
 				paint_flag = 1;
 				}
 			#endif
+			#ifdef USE_PARAM
+			if	( show_flags & PARAM_FLAG )
+				{
+				if	( para.editing )
+					unscroll();
+				param_select( -1 );
+				paint_flag = 1;
+				}
+			#endif
 			}
 		touch_occur_cnt = 0;
 		old_touch_cnt = 0;
@@ -557,8 +599,7 @@ while	(1)
 		transprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
 		#ifdef USE_UART1
-		// CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
-		CDC_print("-> %02d show %8d\r\n", daytime.ss, menu.last_ypos );
+		CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;

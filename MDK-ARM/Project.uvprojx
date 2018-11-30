@@ -559,6 +559,11 @@
               <FileType>1</FileType>
               <FilePath>..\Src\s_gpio.c</FilePath>
             </File>
+            <File>
+              <FileName>param.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\param.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

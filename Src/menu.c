@@ -13,6 +13,7 @@ menu.x0 = x0;			// bord gauche en px
 menu.dx = dx;			// largeur en px
 menu.ty = 0;			// amplitude translation verticale
 menu.font = lafont;
+menu.pitch = ( menu.font->dy * 4 ) / 3;
 menu.qitem = 0;		// nombre d'items
 }
 
@@ -24,7 +25,7 @@ if	( menu.qitem == MENUQ )
 menu.item[menu.qitem].key = key;
 menu.item[menu.qitem].label = label;
 ++menu.qitem;
-menu.ty = ( menu.qitem - 1 ) * menu.font->dy;
+menu.ty = ( menu.qitem - 1 ) * menu.pitch;
 }
 
 // afficher le menu, rend la clef de l'element selectionne
@@ -61,7 +62,7 @@ for	( i = 0; i < menu.qitem; ++i )
 		}
 	else	GC.text_color = ARGB_GREEN;
 	jlcd_yclip_text( xs, ys, menu.item[i].label );
-	ys += GC.font->dy;
+	ys += menu.pitch;
 	}
 if	( ( iselect >= 0 ) && ( iselect < menu.qitem ) )
 	return menu.item[iselect].key;
