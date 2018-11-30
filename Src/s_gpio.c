@@ -5,7 +5,7 @@
 #include "stm32f7xx_ll_gpio.h"
 #include "s_gpio.h"
 
-#ifdef USE_UART
+#ifdef USE_UART1
 void GPIO_config_uart1(void)
 {
 LL_GPIO_InitTypeDef gpio_initstruct;
@@ -32,7 +32,7 @@ gpio_initstruct.Alternate  = LL_GPIO_AF_7;
 gpio_initstruct.Pin        = LL_GPIO_PIN_7;
 LL_GPIO_Init(GPIOB, &gpio_initstruct);
 }
-
+#endif
 #ifdef USE_UART6
 void GPIO_config_uart6(void)
 {
@@ -52,8 +52,6 @@ LL_GPIO_Init(GPIOC, &gpio_initstruct);
 }
 #endif
 
-#endif
-
 #ifdef PROFILER_PI2
 // GPIO output pins PI1 et PI2 for profiling
 void GPIO_config_profiler_PI1_PI2( void )
@@ -70,5 +68,19 @@ gpio_initstruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
 gpio_initstruct.Pull       = LL_GPIO_PULL_NO;
 gpio_initstruct.Pin        = LL_GPIO_PIN_1 | LL_GPIO_PIN_2;
 LL_GPIO_Init(GPIOI, &gpio_initstruct);
+}
+
+void profile_D13( int val )
+{
+if	( val )
+	LL_GPIO_SetOutputPin( GPIOI, LL_GPIO_PIN_1 );
+else	LL_GPIO_ResetOutputPin( GPIOI, LL_GPIO_PIN_1 );
+}
+
+void profile_D8( int val )
+{
+if	( val )
+	LL_GPIO_SetOutputPin( GPIOI, LL_GPIO_PIN_2 );
+else	LL_GPIO_ResetOutputPin( GPIOI, LL_GPIO_PIN_2 );
 }
 #endif

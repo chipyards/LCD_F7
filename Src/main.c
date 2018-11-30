@@ -56,14 +56,6 @@ DAY_TIME daytime;	// le temps sous diverses formes
 
 int kmenu = 0;
 
-#ifdef USE_UART
-// variables pour UART
-volatile int logflag = 0;
-volatile char CDCbuf[128];
-volatile int CDCindex;
-volatile static int ccmd;
-#endif
-
 // quelques parametres geometriques de GUI (ecran 480*272)
 // Axe X
 #ifdef LEFT_FIX
@@ -98,40 +90,6 @@ void SysTick_Handler(void)
 {
   HAL_IncTick();
 }
-
-#ifdef USE_UART
-// traitement UARTS
-void USART1_IRQHandler( void )		// UART CDC vers USB
-{
-if	(
-	( LL_USART_IsActiveFlag_TXE( USART1 ) ) &&
-	( LL_USART_IsEnabledIT_TXE( USART1 ) )
-	)
-	{
-	int c;
-	c = CDCbuf[CDCindex++];
-	if	( c )
-		{
-		LL_USART_TransmitData8( USART1, c );
-		}
-	else	{
-		UART1_TX_INT_disable();
-		CDCindex = 0;
-		}
-	}
-if	(
-	( LL_USART_IsActiveFlag_RXNE( USART1 ) ) &&
-	( LL_USART_IsEnabledIT_RXNE( USART1 ) )
-	)
-	{
-	ccmd = LL_USART_ReceiveData8( USART1 );
-	// switch	( ccmd )
-	//	{
-	//	}
-	logflag = 1;
-	}
-}
-#endif
 
 // ---------------------- application ----------------------
 
@@ -445,9 +403,8 @@ BSP_TS_Init( LCD_DX, LCD_DY );
 // BSP_LED_Init(LED1);
 BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );   
 
-#ifdef USE_UART
-GPIO_config_uart1();
-UART1_init(9600);
+#ifdef USE_UART1
+CDC_init();
 #endif
 
 idrag_init();
@@ -573,9 +530,10 @@ while	(1)
 					case MM_ADJ_FLAG: daytime.mm = adj.val; break;
 					}
 				jrtc_set_day_time( &daytime );
-							// quitter mode ajust
-				show_flags &= ~TIME_ADJ_FLAGS;
+
+				show_flags &= ~TIME_ADJ_FLAGS;		// quitter mode ajust
 				unscroll();
+				paint_flag = 1;
 				}
 			#endif
 			}
@@ -586,12 +544,10 @@ while	(1)
 	if	( old_second != daytime.day_seconds )
 		{					// traitement cadence a la seconde
 		#ifdef USE_TRANSCRIPT
-		transprint( "-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
+		transprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
-		#ifdef USE_UART
-		snprintf( (char *)CDCbuf, sizeof( CDCbuf ),
-			  "-> %02d show %08x\r\n", daytime.ss, show_flags );
-		UART1_TX_INT_enable();
+		#ifdef USE_UART1
+		CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
@@ -609,19 +565,28 @@ while	(1)
 		repaint( &TS_State );
 		LTDC->SRCR |= LTDC_SRCR_VBR;
 		}
+
+	#ifdef USE_UART1
+	{
+	int c = CDC_getcmd();
+	if	( c > 0 )
+		CDC_print("cmd '%c'\r\n", c );
+	}
+	#endif
+
 	#ifdef PROFILER_PI2
-	HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_RESET);	// PI2 aka D8 profiler pin
+	profile_D8(0);	// PI2 aka D8 profiler pin
 	#endif
 
 	#ifdef GREEN_CPU
 	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
 		{
 		#ifdef PROFILER_PI2
-		// LL_GPIO_ResetOutputPin( GPIOI, LL_GPIO_PIN_1 );	// PI1
+		// profile_D13(0);	// PI1
 		#endif
 		HAL_PWR_EnterSLEEPMode( PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI );
 		#ifdef PROFILER_PI2
-		// LL_GPIO_SetOutputPin( GPIOI, LL_GPIO_PIN_1 );
+		// profile_D13(1);	// PI1
 		#endif
 		}
 	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
@@ -632,7 +597,7 @@ while	(1)
 	#endif
 
 	#ifdef PROFILER_PI2
-	HAL_GPIO_WritePin( GPIOI, GPIO_PIN_2, GPIO_PIN_SET);
+	profile_D8(1);
 	#endif
 	}
 }
