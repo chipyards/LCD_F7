@@ -27,7 +27,7 @@ void param_init( const JFONT * lafont, int x0, int dx )
 {
 para.x0 = x0;
 para.dx = dx;
-para.pitch = ( lafont->dy * 7 ) / 4;
+para.pitch = ( lafont->dy * 7 ) / 4;	// i.e. on met plus de space entre les lignes (arbitrairement)
 para.items = lesparams;
 para.qitem = sizeof(lesparams) / sizeof(PARAMitem);
 para.dy = ( 2 + para.qitem ) * para.pitch; // marges = 1 pitch
@@ -88,30 +88,34 @@ if	( para.editing )
 // on ajoute un petit offset a ys pour decaler la zone vers le haut
 void param_select( int ys )
 {
-if	( ys < 0 )
-	{
-	if	( para.editing )
-		{			// conclure edition
-		para.editing = 0;
-		para.items[para.selitem].val = adj.val;
-		}
-	para.selitem = -1;
-	return;
-	}
 para.selitem = ( ( ys + 5 - para.last_ypos ) / para.pitch ) - 1;
+if	( para.selitem < 0 )
+	para.selitem = 0;
+if	( para.selitem >= para.qitem )
+	para.selitem = para.qitem - 1; 
 }
 
-// demarrage edition (2eme touch)
-void param_start()
+// enregistrer la valeur du param en fin d'edition
+void param_save(void)
 {
-int is = para.selitem;
-if	( ( is >= 0 ) && ( is < para.qitem ) )
+para.items[para.selitem].val = adj.val;
+para.editing = 0;
+// para.selitem = -1;
+}
+
+// demarrage edition (2eme touch), appeler seulement quand para.editing == 0
+// rend une valeur de ypos pour idrag
+int param_start()
+{
+int is = para.selitem, ypos = 0;
+if	( ( para.editing == 0 ) && ( is >= 0 ) && ( is < para.qitem ) )
 	{
-	adju_start( para.font, para.x0 + para.xv,
-		    para.last_ypos + ( para.pitch * ( 1 + is ) ),
-		    44, 50, para.items[is].min, para.items[is].max );
+	ypos = adju_start( para.font, para.x0 + para.xv,
+			para.last_ypos + ( para.pitch * ( 1 + is ) ) + ( para.font->h / 2 ), 44, 60,
+			para.items[is].min, para.items[is].max, para.items[para.selitem].val );
 	para.editing = 1;
 	}
+return ypos;
 }
 
 #endif

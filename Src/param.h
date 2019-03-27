@@ -35,5 +35,8 @@ void param_draw( int ypos );
 // interpretation d'un touch
 void param_select( int ys );
 
-// demarrage edition (2eme touch)
-void param_start(void);
+// demarrage edition (2eme touch) rend une valeur de ypos pour idrag
+int param_start(void);
+
+// enregistrer la valeur du param en fin d'edition
+void param_save(void);

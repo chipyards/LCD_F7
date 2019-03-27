@@ -106,7 +106,7 @@ jlcd_vline( x, 0, LCD_DY );
 // mise a jour de idrag.yobjmin et position par defaut
 void unscroll(void)
 {
-idrag.yobj = 0;	//pour prersque tous les cas
+idrag.yobj = 0;	//pour presque tous les cas
 if	( show_flags & MENU_FLAG )
 	idrag.yobjmin = - menu.ty;
 else
@@ -124,7 +124,7 @@ else
 if	( show_flags & DEMO_FLAG )
 	idrag.yobjmin = LCD_DY - DEMO_DY;
 #endif
-}
+;}
 
 // initialise les zones en fonction des options valides
 // et d'un flag concernant la zone de scroll
@@ -302,7 +302,7 @@ else	{
 	#ifdef FLASH_THE_FONTS
 	snprintf( tbuf, sizeof(tbuf), "%d %d", flash_bytes, flash_errs );
 	#else
-	// snprintf( tbuf, sizeof(tbuf), "%d", idrag.vy );
+	// snprintf( tbuf, sizeof(tbuf), "%d", idrag.yobj );
 	#endif
 	}
 if	( tbuf[0] )			// status/debug PROVIZOAR pas clean	
@@ -508,14 +508,12 @@ while	(1)
 				if	( x2 < ( FIX_ZONE_X0 + 70 ) )
 					{
 					show_flags |= ( HH_ADJ_FLAG | HOUR_FLAG );
-					adju_start( &JFont20, FIX_ZONE_X0+20, YHOUR-7, 44, 50, 0, 24 );
-					idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+20, YHOUR+18, 44, 60, 0, 24, daytime.hh );
 					}
 				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
 					{
 					show_flags |= ( MN_ADJ_FLAG | HOUR_FLAG );
-					adju_start( &JFont20, FIX_ZONE_X0+79, YHOUR-7, 44, 50, 0, 60 );
-					idrag.yobjmin = - adj.ty;
+					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+79, YHOUR+18, 44, 60, 0, 60, daytime.mn );
 					}
 				// else	rien
 				}
@@ -524,36 +522,39 @@ while	(1)
 				if	( x2 < ( FIX_ZONE_X0 + 90 ) )
 					{
 					show_flags |= WD_ADJ_FLAG | DATE_FLAG;
-					adju_start( &JFont20, FIX_ZONE_X0+8, YDATE-9, 85, 50, 0, 5 );
-					idrag.yobjmin = - adj.ty;
+					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+8, YDATE+14, 85, 60, 0, 5, daytime.wd );
 					}
 				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
 					{
 					show_flags |= MD_ADJ_FLAG | DATE_FLAG;
-					adju_start( &JFont20, FIX_ZONE_X0+90, YDATE-9, 38, 50, 1, 32 );
-					idrag.yobjmin = - adj.ty;
+					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+90, YDATE+14, 38, 60, 1, 32, daytime.md );
 					}
 				else	{
 					show_flags |= MM_ADJ_FLAG | DATE_FLAG;
-					adju_start( &JFont20, FIX_ZONE_X0+135, YDATE-9, 38, 50, 1, 13 );
-					idrag.yobjmin = - adj.ty;
+					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+135, YDATE+14, 38, 60, 1, 13, daytime.mm );
 					}
+				}
+			if	( show_flags & TIME_ADJ_FLAGS )		// elements communs a tous les time adjs
+				{
+				idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+				idrag.touching = 0;		// forcer un nouveau landing
 				}
 			}
 		else
+		#endif
 		#ifdef USE_PARAM
-		if	( ( old_touch_cnt == 1 ) && ( show_flags & PARAM_FLAG ) )
+		if	( ( old_touch_cnt == 1 ) && ( show_flags & PARAM_FLAG ) && ( para.editing == 0 ) )
 			{
-			param_start();
+			idrag.yobj = param_start();	// demarrer l'edition sur le param qui a ete deja selectionne
 			idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+			idrag.touching = 0;		// forcer un nouveau landing
 			}
+		else
 		#endif
-			{
-			idrag_event_call( TS_State.touchDetected,
-					  TS_State.touchX[1], TS_State.touchY[1],
-					  GC.ltdc_irq_cnt );
-			}
-		#endif
+		{}	// pour le dernier else
+		idrag_event_call( TS_State.touchDetected,
+				  TS_State.touchX[1], TS_State.touchY[1],
+				  GC.ltdc_irq_cnt );
 		paint_flag = 1; last_touch_second = daytime.day_seconds;
 		old_touch_cnt = 2;
 		}
@@ -583,8 +584,10 @@ while	(1)
 			if	( show_flags & PARAM_FLAG )
 				{
 				if	( para.editing )
+					{
+					param_save();
 					unscroll();
-				param_select( -1 );
+					}
 				paint_flag = 1;
 				}
 			#endif
