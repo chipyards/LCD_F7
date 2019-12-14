@@ -1,3 +1,6 @@
+#include "jlcd.h"
+#include "vfonts.h"
+
 /* fonts dependant d'une BMP vfonts1.bin chargee en flash @ 0x08040000
    les caracteres sont a largeur variable mais on a maintenu une largeur uniforme pour les chiffres
  */
@@ -6,7 +9,7 @@
 // interligne PS : 59px (48pt = 50px theoriques)
 // 14 cells "0123456789:;<=" avec ';' --> "Salle", '<' --> logo INSA, '=' --> burger icon
 // les chiffres font 33px de haut mais on a mis 36 a cause des 'l' de "Salle"
-const JVCHAR JVFont36n_defs[14] = 
+static const JVCHAR JVFont36n_defs[14] = 
 {
 { 1, 4, 19, 36 },
 { 22, 4, 19, 36 },
@@ -36,7 +39,7 @@ JVFont36n_defs,		// tableau des dimensions des caracteres
 // Chaparral Pro Bold 36pt rendu a 75 DPI par PS
 // 16 cells "0123456789:;<=>?" avec ':' --> '-' (pour date)
 // ';' --> "Lundi" etc... '?' = "Vendredi"
-const JVCHAR JVFont26s_defs[16] = 
+static const JVCHAR JVFont26s_defs[16] = 
 {
 { 5, 69, 14, 26 },
 { 21, 69, 14, 26 },
@@ -67,7 +70,7 @@ JVFont26s_defs,		// tableau des dimensions des caracteres
 
 // Chaparral Pro Bold 28pt rendu a 75 DPI par PS
 // 11 cells "0123456789:"
-const JVCHAR JVFont19n_defs[11] = 
+static const JVCHAR JVFont19n_defs[11] = 
 {
 { 4, 45, 12, 19 },
 { 17, 45, 12, 19 },

@@ -1,3 +1,5 @@
+#include "../Src/options.h"
+#ifdef COMPILE_THE_FONTS
 const unsigned short JFont12_Table [] =
 {
 // ' ' ascii 032 index 00
@@ -1148,3 +1150,4 @@ JFONT JFont12 = {
   7, // dx
   12  // dy
 };
+#endif

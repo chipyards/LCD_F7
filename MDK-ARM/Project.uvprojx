@@ -335,7 +335,7 @@
               <MiscControls>--C99</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F746xx,USE_STM32746G_DISCO,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Inc;F:\STM32\Cube7\Drivers\CMSIS\Device\ST\STM32F7xx\Include;F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Inc;F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery;F:\STM32\Cube7\Utilities;F:\STM32\Cube7\Utilities\fonts;F:\STM32\Cube7\Middlewares\Third_Party\FatFs\src;F:\STM32\Cube7\Drivers\BSP\Components;F:\STM32\Cube7\Middlewares\Third_Party\FatFs\src\drivers</IncludePath>
+              <IncludePath>..\F7\Inc;C:/STM32/CubeF7/Drivers\CMSIS\Device\ST\STM32F7xx\Include;C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Inc;C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery;C:/STM32/CubeF7/Drivers\BSP\Components</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -382,112 +382,112 @@
             <File>
               <FileName>stm32f7xx_hal_rcc_ex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc_ex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_ll_fmc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_fmc.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_fmc.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_dma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_rcc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_gpio.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_gpio.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_sdram.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_sdram.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_sdram.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_i2c_ex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c_ex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_pwr.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_cortex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_cortex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_cortex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_flash_ex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash_ex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_ltdc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_ltdc.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_ltdc.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_dma2d.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma2d.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma2d.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_flash.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_pwr_ex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr_ex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_rtc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_rtc_ex.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc_ex.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_hal_eth.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_eth.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_eth.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_ll_gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_gpio.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_gpio.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_ll_usart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usart.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usart.c</FilePath>
             </File>
             <File>
               <FileName>stm32f7xx_ll_rcc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_rcc.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_rcc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -497,72 +497,77 @@
             <File>
               <FileName>idrag.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\idrag.c</FilePath>
+              <FilePath>..\F7\Src\idrag.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\main.c</FilePath>
+              <FilePath>..\F7\Src\main.c</FilePath>
             </File>
             <File>
               <FileName>system_misc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\system_misc.c</FilePath>
+              <FilePath>..\F7\Src\system_misc.c</FilePath>
             </File>
             <File>
               <FileName>jlcd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\jlcd.c</FilePath>
+              <FilePath>..\F7\Src\jlcd.c</FilePath>
             </File>
             <File>
               <FileName>jrtc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\jrtc.c</FilePath>
+              <FilePath>..\F7\Src\jrtc.c</FilePath>
             </File>
             <File>
               <FileName>usb_eth_low.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\usb_eth_low.c</FilePath>
+              <FilePath>..\F7\Src\usb_eth_low.c</FilePath>
             </File>
             <File>
               <FileName>demo.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\demo.c</FilePath>
+              <FilePath>..\F7\Src\demo.c</FilePath>
             </File>
             <File>
               <FileName>trans.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\trans.c</FilePath>
+              <FilePath>..\F7\Src\trans.c</FilePath>
             </File>
             <File>
               <FileName>stm32746g_discovery_lite.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\stm32746g_discovery_lite.c</FilePath>
+              <FilePath>..\F7\Src\stm32746g_discovery_lite.c</FilePath>
             </File>
             <File>
               <FileName>menu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\menu.c</FilePath>
+              <FilePath>..\F7\Src\menu.c</FilePath>
             </File>
             <File>
               <FileName>adju.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\adju.c</FilePath>
+              <FilePath>..\F7\Src\adju.c</FilePath>
             </File>
             <File>
               <FileName>uarts.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\uarts.c</FilePath>
+              <FilePath>..\F7\Src\uarts.c</FilePath>
             </File>
             <File>
               <FileName>s_gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\s_gpio.c</FilePath>
+              <FilePath>..\F7\Src\s_gpio.c</FilePath>
             </File>
             <File>
               <FileName>param.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\param.c</FilePath>
+              <FilePath>..\F7\Src\param.c</FilePath>
+            </File>
+            <File>
+              <FileName>vfonts.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\F7\Src\vfonts.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -572,7 +577,7 @@
             <File>
               <FileName>system_stm32f7xx.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\system_stm32f7xx.c</FilePath>
+              <FilePath>..\F7\Src\system_stm32f7xx.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -592,22 +597,22 @@
             <File>
               <FileName>stm32746g_discovery_sdram.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_sdram.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_sdram.c</FilePath>
             </File>
             <File>
               <FileName>stm32746g_discovery_lcd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_lcd.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_lcd.c</FilePath>
             </File>
             <File>
               <FileName>ft5336.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\BSP\Components\ft5336\ft5336.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\BSP\Components\ft5336\ft5336.c</FilePath>
             </File>
             <File>
               <FileName>stm32746g_discovery_ts.c</FileName>
               <FileType>1</FileType>
-              <FilePath>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_ts.c</FilePath>
+              <FilePath>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_ts.c</FilePath>
             </File>
           </Files>
         </Group>

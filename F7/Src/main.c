@@ -15,6 +15,7 @@
 #include "stm32f7xx_ll_usart.h"
 #include "uarts.h"
 #include "param.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void USB_PhyEnterLowPowerMode(void);

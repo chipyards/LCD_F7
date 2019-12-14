@@ -232,7 +232,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc_ex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_rcc_ex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -244,7 +244,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_fmc.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_fmc.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_ll_fmc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -256,7 +256,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_dma.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -268,7 +268,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rcc.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_rcc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -280,7 +280,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_gpio.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_gpio.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_gpio.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -292,7 +292,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -304,7 +304,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_sdram.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_sdram.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_sdram.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -316,7 +316,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c_ex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_i2c_ex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -328,7 +328,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_pwr.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -340,7 +340,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_i2c.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_i2c.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -352,7 +352,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_cortex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_cortex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_cortex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -364,7 +364,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash_ex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_flash_ex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -376,7 +376,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_ltdc.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_ltdc.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_ltdc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -388,7 +388,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma2d.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_dma2d.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_dma2d.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -400,7 +400,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_flash.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_flash.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -412,7 +412,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr_ex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pwr_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_pwr_ex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -424,7 +424,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_rtc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -436,7 +436,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc_ex.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_rtc_ex.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_rtc_ex.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -448,7 +448,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_eth.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_eth.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_hal_eth.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -460,7 +460,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_gpio.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_gpio.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_ll_gpio.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -472,7 +472,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usart.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usart.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_ll_usart.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -484,7 +484,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>C:\STM32\Cube7\Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_rcc.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_rcc.c</PathWithFileName>
       <FilenameWithoutPath>stm32f7xx_ll_rcc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -504,7 +504,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\idrag.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\idrag.c</PathWithFileName>
       <FilenameWithoutPath>idrag.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -513,10 +513,10 @@
       <GroupNumber>2</GroupNumber>
       <FileNumber>24</FileNumber>
       <FileType>1</FileType>
-      <tvExp>0</tvExp>
+      <tvExp>1</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\main.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -528,7 +528,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\system_misc.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\system_misc.c</PathWithFileName>
       <FilenameWithoutPath>system_misc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -540,7 +540,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\jlcd.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\jlcd.c</PathWithFileName>
       <FilenameWithoutPath>jlcd.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -552,7 +552,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\jrtc.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\jrtc.c</PathWithFileName>
       <FilenameWithoutPath>jrtc.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -564,7 +564,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\usb_eth_low.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\usb_eth_low.c</PathWithFileName>
       <FilenameWithoutPath>usb_eth_low.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -576,7 +576,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\demo.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\demo.c</PathWithFileName>
       <FilenameWithoutPath>demo.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -588,7 +588,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\trans.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\trans.c</PathWithFileName>
       <FilenameWithoutPath>trans.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -600,7 +600,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\stm32746g_discovery_lite.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\stm32746g_discovery_lite.c</PathWithFileName>
       <FilenameWithoutPath>stm32746g_discovery_lite.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -609,10 +609,10 @@
       <GroupNumber>2</GroupNumber>
       <FileNumber>32</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\menu.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\menu.c</PathWithFileName>
       <FilenameWithoutPath>menu.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -624,7 +624,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\adju.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\adju.c</PathWithFileName>
       <FilenameWithoutPath>adju.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -636,7 +636,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\uarts.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\uarts.c</PathWithFileName>
       <FilenameWithoutPath>uarts.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -648,7 +648,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\s_gpio.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\s_gpio.c</PathWithFileName>
       <FilenameWithoutPath>s_gpio.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -660,8 +660,20 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\param.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\param.c</PathWithFileName>
       <FilenameWithoutPath>param.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>2</GroupNumber>
+      <FileNumber>37</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\F7\Src\vfonts.c</PathWithFileName>
+      <FilenameWithoutPath>vfonts.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -675,12 +687,12 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>3</GroupNumber>
-      <FileNumber>37</FileNumber>
+      <FileNumber>38</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Src\system_stm32f7xx.c</PathWithFileName>
+      <PathWithFileName>..\F7\Src\system_stm32f7xx.c</PathWithFileName>
       <FilenameWithoutPath>system_stm32f7xx.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -695,7 +707,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>4</GroupNumber>
-      <FileNumber>38</FileNumber>
+      <FileNumber>39</FileNumber>
       <FileType>2</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -715,25 +727,13 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>39</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_sdram.c</PathWithFileName>
-      <FilenameWithoutPath>stm32746g_discovery_sdram.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>5</GroupNumber>
       <FileNumber>40</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_lcd.c</PathWithFileName>
-      <FilenameWithoutPath>stm32746g_discovery_lcd.c</FilenameWithoutPath>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_sdram.c</PathWithFileName>
+      <FilenameWithoutPath>stm32746g_discovery_sdram.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -744,8 +744,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\BSP\Components\ft5336\ft5336.c</PathWithFileName>
-      <FilenameWithoutPath>ft5336.c</FilenameWithoutPath>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_lcd.c</PathWithFileName>
+      <FilenameWithoutPath>stm32746g_discovery_lcd.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -756,7 +756,19 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>F:\STM32\Cube7\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_ts.c</PathWithFileName>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\BSP\Components\ft5336\ft5336.c</PathWithFileName>
+      <FilenameWithoutPath>ft5336.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>5</GroupNumber>
+      <FileNumber>43</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>C:/STM32/CubeF7/Drivers\BSP\STM32746G-Discovery\stm32746g_discovery_ts.c</PathWithFileName>
       <FilenameWithoutPath>stm32746g_discovery_ts.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>

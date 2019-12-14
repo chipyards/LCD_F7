@@ -11,13 +11,13 @@
 #include "jlcd.h"
 
 #ifdef COMPILE_THE_FONTS
-#include "../Fonts/jfont24.c"
-#include "../Fonts/jfont20.c"
-#include "../Fonts/jfont16.c"
-#include "../Fonts/jfont12.c"
-#include "../Fonts/jfont8.c"
+//#include "../Fonts/jfont24.c" ON NE FAIT PLUS CELA
+//#include "../Fonts/jfont20.c"
+//#include "../Fonts/jfont16.c"
+//#include "../Fonts/jfont12.c"
+//#include "../Fonts/jfont8.c"
 #ifdef FLASH_THE_FONTS
-#include "../Fonts/flashy.c"
+//#include "../Fonts/flashy.c"
 #endif
 #else
 const JFONT JFont24 = {
@@ -66,7 +66,7 @@ const JFONT JFont8 = {
 
 // fonts variables toujours compilees pour le moment
 // necessitent une BMP chargee en flash separement
-#include "vfonts.c"
+#include "vfonts.h"
 
 // contexte graphic global
 GCtype GC;
@@ -303,7 +303,7 @@ void jlcd_char( unsigned int x, unsigned int y, int ascii )
 {
 unsigned int i, j;
 unsigned int height, width, line;
-__IO uint32_t * adr_base;	// en mode ARGB8888
+__IO unsigned int * adr_base;	// en mode ARGB8888
 const uint16_t *prow;
   
 ascii -= ' ';			// localiser le char dans la table
@@ -332,7 +332,7 @@ void jlcd_yclip_char( int x, int y, int ascii )
 {
 int i, j;
 int height, width, line;
-__IO uint32_t * adr_base;	// en mode ARGB8888
+__IO unsigned int * adr_base;	// en mode ARGB8888
 const uint16_t *prow;
   
 height = GC.font->h;
@@ -428,7 +428,7 @@ return x;
 
 // extraire et afficher l'image d'un fichier BMP RGB present en memoire
 // les dimensions sont lues dans le header du fichier
-int jlcd_draw_bmp( uint32_t x, uint32_t y, uint8_t *pbmp )
+int jlcd_draw_bmp( unsigned int x, unsigned int y, unsigned char *pbmp )
 {
 uint32_t data_pos, w, h, dest_adr;
   
@@ -461,8 +461,8 @@ return 0;
 
 // extraire et afficher une zone rectangulaire prise dans un fichier BMP RGB present en memoire
 // aucune protection contre les debordements
-int jlcd_blit_bmp( uint32_t xd, uint32_t yd, uint32_t xs, uint32_t ys,
-		   uint32_t w, uint32_t h, uint8_t *pbmp )
+int jlcd_blit_bmp( unsigned int xd, unsigned int yd, unsigned int xs, unsigned int ys,
+		   unsigned int w, unsigned int h, unsigned char *pbmp )
 {
 uint32_t wbmp, hbmp, data_pos, dest_adr;
   

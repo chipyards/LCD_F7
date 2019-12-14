@@ -1,3 +1,5 @@
+#include "../Src/options.h"
+#ifdef FLASH_THE_FONTS
 /* acces memoire FLASH -------------------------------------------- */
 
 // copie une fonte - ne fait pas l'effacement
@@ -72,4 +74,4 @@ retval += check_1_font( &JFont8, adr );
 adr += ( JFont8.h * QCHAR * 2 );
 return retval;
 }
-
+#endif

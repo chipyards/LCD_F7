@@ -1,3 +1,5 @@
+#include "../Src/options.h"
+#ifdef COMPILE_THE_FONTS
 const unsigned short JFont8_Table [] =
 {
 // ' ' ascii 032 index 00
@@ -958,3 +960,4 @@ JFONT JFont8 = {
   5, // dx
   8  // dy
 };
+#endif

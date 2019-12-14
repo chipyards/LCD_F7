@@ -1,10 +1,10 @@
-#define VERSION "3.5"
+#define VERSION "3.5 keil"
 
 // #define GREEN_CPU		// sleep dans main loop
 
 /* modules optionnels du display */
 #define USE_TRANSCRIPT		// scrollable transcript zone
-// #define USE_DEMO		// demo des fonts
+#define USE_DEMO		// demo des fonts
 #define USE_TIME_DATE		// affichage de l'heure
 #define USE_UART1		// CDC vers PC via ST-Link
 #define USE_PARAM		// page de parametres ajustables
