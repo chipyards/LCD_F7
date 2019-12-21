@@ -1,14 +1,18 @@
-#include "../Src/options.h"
+#include "stm32746g_discovery.h"
+#include "options.h"
+#include "jlcd.h"
+
 #ifdef FLASH_THE_FONTS
 /* acces memoire FLASH -------------------------------------------- */
 
 // copie une fonte - ne fait pas l'effacement
 // rend la taille en bytes
-unsigned int flash_1_font( const JFONT * lafont, unsigned int adr )
+static unsigned int flash_1_font( const JFONT * lafont, unsigned int adr )
 {
 unsigned int size2, i, retval, val;
 size2 = lafont->h * QCHAR;
 retval = 0;
+// cette boucle est justifiee par le fait que HAL n'a pas de fonction pour flasher un tableau d'un coup...
 for	( i = 0; i < size2; ++i )
 	{
 	val = lafont->rows[i];
@@ -19,7 +23,7 @@ return( size2 * 2 );
 
 // verifie une fonte 
 // rend le nombre d'erreurs
-unsigned int check_1_font( const JFONT * lafont, unsigned int adr )
+static unsigned int check_1_font( const JFONT * lafont, unsigned int adr )
 {
 int i, retval = 0;
 for	( i = 0; i < ( lafont->h * QCHAR ); ++i )

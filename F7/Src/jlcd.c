@@ -10,60 +10,6 @@
 #include "options.h"
 #include "jlcd.h"
 
-#ifdef COMPILE_THE_FONTS
-//#include "../Fonts/jfont24.c" ON NE FAIT PLUS CELA
-//#include "../Fonts/jfont20.c"
-//#include "../Fonts/jfont16.c"
-//#include "../Fonts/jfont12.c"
-//#include "../Fonts/jfont8.c"
-#ifdef FLASH_THE_FONTS
-//#include "../Fonts/flashy.c"
-#endif
-#else
-const JFONT JFont24 = {
-  (const unsigned short *)FLASH_FONTS_BASE,
-  16, // w
-  21, // h
-  17, // dx
-  24  // dy
-};
-const JFONT JFont20 = {
-  ((const unsigned short *)FLASH_FONTS_BASE) + 21*QCHAR,
-  13, // w
-  17, // h
-  14, // dx
-  20  // dy
-};
-const JFONT JFont16 = {
-  ((const unsigned short *)FLASH_FONTS_BASE) + (21+17)*QCHAR,
-  11, // w
-  13, // h
-  11, // dx
-  16  // dy
-};
-const JFONT JFont16n = {
-  ((const unsigned short *)FLASH_FONTS_BASE) + (21+17)*QCHAR,
-  11, // w
-  13, // h
-  10, // dx
-  16  // dy
-};
-const JFONT JFont12 = {
-  ((const unsigned short *)FLASH_FONTS_BASE) + (21+17+13)*QCHAR,
-  7, // w
-  10, // h
-  7, // dx
-  12  // dy
-};
-const JFONT JFont8 = {
-  ((const unsigned short *)FLASH_FONTS_BASE) + (21+17+13+10)*QCHAR,
-  5, // w
-  8, // h
-  5, // dx
-  8  // dy
-};
-#endif
-
 // fonts variables toujours compilees pour le moment
 // necessitent une BMP chargee en flash separement
 #include "vfonts.h"

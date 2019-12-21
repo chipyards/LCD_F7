@@ -32,25 +32,25 @@ typedef struct {
   int dy;	// line spacing
 } JFONT;
 
-// utiliser cette option si les fontes ne sont pas deja flashees
-// les fonts seront logees dans le secteur 0 avec l'appli
-// #define COMPILE_THE_FONTS
-// N.B. pour avoir assez d'espace dans le secteur 0, enlever USE_TRANSCRIPT dans le projet
-
-// utiliser cette option (qui implique la precedente) pour flasher les fonts
-// les fonts seront logees dans le secteur FLASH_FONTS_SECTOR @ FLASH_FONTS_BASE
-// #define FLASH_THE_FONTS
-
-// sans ces options les fonts sont supposees presentes @ FLASH_FONTS_BASE
-
-#ifdef FLASH_THE_FONTS
-#define COMPILE_THE_FONTS
-#endif
+#include "jfonts.h"
 
 #define FLASH_FONTS_BASE	0x08018000	// sector 3
 #define FLASH_FONTS_SECTOR	3		// pour l'effacement
 #define QCHAR	95	// nombre de caracteres dans chaque font
 
+// utiliser option COMPILE_THE_FONTS (dans options.h) si les fontes ne sont pas deja flashees
+// les fonts seront logees dans le secteur 0 avec l'appli
+// N.B. KEIL : pour avoir assez d'espace dans le secteur 0,  enlever USE_TRANSCRIPT dans le projet
+
+// utiliser option FLASH_THE_FONTS (dans options.h), qui implique la precedente, pour flasher les fonts
+// les fonts seront logees dans le secteur FLASH_FONTS_SECTOR @ FLASH_FONTS_BASE
+
+// sans ces options les fonts sont supposees presentes @ FLASH_FONTS_BASE
+
+#ifdef FLASH_THE_FONTS
+#define COMPILE_THE_FONTS
+#include "flashy.h"
+#endif
 
 // le contexte graphique
 typedef struct {    
@@ -72,21 +72,6 @@ void GC_init(void);
 
 // contexte graphic global
 extern GCtype GC;
-#ifdef COMPILE_THE_FONTS
-extern JFONT JFont24;
-extern JFONT JFont20;
-extern JFONT JFont16;
-extern JFONT JFont16n;
-extern JFONT JFont12;
-extern JFONT JFont8;
-#else
-const extern JFONT JFont24;
-const extern JFONT JFont20;
-const extern JFONT JFont16;
-const extern JFONT JFont16n;
-const extern JFONT JFont12;
-const extern JFONT JFont8;
-#endif
 
 const extern JVFONT JVFont36n;
 const extern JVFONT JVFont26s;
@@ -169,11 +154,6 @@ void draw_r_arrow( int x, int y, int w, int h );
 
 // texte centre, clip y
 void draw_centered_text( int x, int y, int len, const char * txt );
-
-#ifdef FLASH_THE_FONTS
-unsigned int flash_the_fonts(void);
-unsigned int check_the_fonts(void);
-#endif
 
 // ------------------------- quelques couleurs sur 32 bits -----------------------
 #define ARGB_BLUE          ((unsigned int)0xFF0000FF)

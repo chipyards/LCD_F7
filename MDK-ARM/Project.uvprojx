@@ -569,6 +569,16 @@
               <FileType>1</FileType>
               <FilePath>..\F7\Src\vfonts.c</FilePath>
             </File>
+            <File>
+              <FileName>flashy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\F7\Src\flashy.c</FilePath>
+            </File>
+            <File>
+              <FileName>jfonts.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\F7\Src\jfonts.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -300,8 +300,14 @@ else if	( show_flags & MENU_FLAG )
 	snprintf( tbuf, sizeof(tbuf), "%d", kmenu );
 	}
 else	{
+	#ifdef COMPILE_THE_FONTS
+	int dummy;
+	dummy = (int)JFont24_Table + (int)JFont20_Table +
+		(int)JFont16_Table + (int)JFont12_Table + (int)JFont8_Table; 
+	snprintf( tbuf, sizeof(tbuf), "%u", dummy );
 	#ifdef FLASH_THE_FONTS
 	snprintf( tbuf, sizeof(tbuf), "%d %d", flash_bytes, flash_errs );
+	#endif
 	#else
 	// snprintf( tbuf, sizeof(tbuf), "%d", idrag.yobj );
 	#endif
@@ -372,7 +378,7 @@ if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
 int main(void)
 {
 TS_StateTypeDef TS_State;
-int paint_flag, old_second, last_touch_second;
+int paint_flag, old_second=0, last_touch_second=0;
 unsigned int old_ltdc_irq_cnt = 0;
 
   /* Enable the CPU Cache */
@@ -626,7 +632,9 @@ while	(1)
 	{
 	int c = CDC_getcmd();
 	if	( c > 0 )
+		{
 		CDC_print("cmd '%c'\r\n", c );
+		}
 	}
 	#endif
 
