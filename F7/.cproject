@@ -43,6 +43,7 @@
 									<listOptionValue builtIn="false" value="C:/STM32/CubeF7/Drivers/BSP/STM32746G-Discovery"/>
 									<listOptionValue builtIn="false" value="C:/STM32/CubeF7/Drivers/BSP/Components/Common"/>
 									<listOptionValue builtIn="false" value="C:/STM32/CubeF7/Drivers/CMSIS/Include"/>
+									<listOptionValue builtIn="false" value="C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src"/>
 									<listOptionValue builtIn="false" value="../Inc"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.symbols.defined.1938178315" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" useByScannerDiscovery="false" valueType="definedSymbols">

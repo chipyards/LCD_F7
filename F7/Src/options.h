@@ -1,7 +1,7 @@
 #ifdef __GNUC__
-#define VERSION "3.5 gnu"
+#define VERSION "3.6 gnu"
 #else
-#define VERSION "3.5 keil"
+#define VERSION "3.6 keil"
 #endif
 
 // #define GREEN_CPU		// sleep dans main loop
@@ -12,6 +12,7 @@
 #define USE_TIME_DATE		// affichage de l'heure
 #define USE_UART1		// CDC vers PC via ST-Link
 #define USE_PARAM		// demo de page de parametres ajustables
+#define USE_SDCARD		// support SD-Card (FAT32 FS)
 // #define USE_UART6	// CN4.D1 = PC6 = UART6 TX, CN4.D0 = PC7 = UART6 RX
 
 // lateralite
