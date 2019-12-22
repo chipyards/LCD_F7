@@ -87,6 +87,14 @@ int flash_bytes = 0;
 int flash_errs = 0;
 #endif
 
+#ifdef USE_SDCARD
+#include "ff_gen_drv.h"
+#include "sd_diskio.h"
+FATFS SDFatFs;  /* File system object for SD card logical drive */
+FIL MyFile;     /* File object */
+char SDPath[4]; /* SD card logical drive path */
+#endif
+
 // ----------------------  Interrupts ----------------------
 
 void SysTick_Handler(void)
@@ -609,7 +617,7 @@ while	(1)
 		transprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
 		#ifdef USE_UART1
-		CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
+		// CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
@@ -629,11 +637,74 @@ while	(1)
 		}
 
 	#ifdef USE_UART1
-	{
+	{			// attention : un seul CDC_print() par commande, car il n'y a pas de queue
 	int c = CDC_getcmd();
 	if	( c > 0 )
 		{
+		#ifdef USE_SDCARD
+		switch	( c )
+			{
+			case 'm' :	// linker le driver (connection soft, n'aborde pas le HW)
+				if	( FATFS_LinkDriver(&SD_Driver, SDPath) )
+					CDC_print("\nfailed : FATFS_LinkDriver\n");
+				else	{
+					// monter le FS
+					if	( f_mount( &SDFatFs, (TCHAR const*)SDPath, 0) )
+						CDC_print("\nFailed : f_mount\n");
+					else	CDC_print("\nOk : f_mount {%s}\n", SDPath );
+					}
+			break;
+			case 'r' :	// ouvrir fichier en lecture
+				if	( f_open( &MyFile, "DEMO.TXT", FA_READ ) )
+					CDC_print("Failed : f_open r DEMO.TXT\n");
+				else	{
+					// lire 1 buffer
+					unsigned int bytesread = 0; char tbuf[64];
+					if	( f_read( &MyFile, tbuf, sizeof(tbuf), &bytesread ) )
+						CDC_print("Ok : f_open r DEMO.TXT\nFailed : f_read\n");
+					else	{
+						if	( bytesread < sizeof(tbuf) )
+							tbuf[bytesread] = 0;
+						else	tbuf[sizeof(tbuf)-1] = 0;
+						CDC_print("Ok : f_open r DEMO.TXT\nOk : f_read %d bytes {%s}\n", bytesread, tbuf );
+						}
+					// fermer
+					f_close(&MyFile);
+					}
+			break;
+			case 'w' :	// ouvrir fichier en ecriture
+				if	( f_open( &MyFile, "WEMO.TXT", FA_CREATE_ALWAYS | FA_WRITE ) )
+					CDC_print("Failed : f_open w WEMO.TXT\n");
+				else	{
+					// ecrire un peu
+					unsigned int byteswritten = 0; const char wbuf[] = "One Love, One Heart";
+					// N.B. ne pas ecrire le NULL dans le fichier ==> sizeof(wbuf)-1
+					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
+						CDC_print("Ok : f_open w WEMO.TXT\nFailed : f_write\n");
+					else	CDC_print("Ok : f_open w WEMO.TXT\nOk : f_write %d bytes\n", byteswritten );
+					// fermer
+					f_close(&MyFile);
+					}
+			break;
+			case 'a' :	// ouvrir fichier en append
+				if	( f_open( &MyFile, "WEMO.TXT", FA_OPEN_APPEND | FA_WRITE ) )
+					CDC_print("Failed : f_open a WEMO.TXT\n");
+				else	{
+					// ecrire un peu
+					unsigned int byteswritten = 0; const char wbuf[] = " !";
+					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
+						CDC_print("Ok : f_open a WEMO.TXT\nFailed : f_write\n");
+					else	CDC_print("Ok : f_open a WEMO.TXT\nOk : f_write %d bytes\n", byteswritten );
+					// fermer
+					f_close(&MyFile);
+					}
+			break;
+			default :
+				CDC_print("cmd '%c'\r\n", c );
+			} // switch c
+		#else
 		CDC_print("cmd '%c'\r\n", c );
+		#endif
 		}
 	}
 	#endif
