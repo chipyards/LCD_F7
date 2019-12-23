@@ -129,15 +129,18 @@ do	{
 	} while (--len);
 }
 // random file with CRC - size is in bytes
-#define QBUF 512
+// rend la duree en s, ou <0 si erreur
+#define QBUF 32768
 static int write_test_file( unsigned int size, const char * path, unsigned int * crc )
 {
 unsigned char wbuf[QBUF];
+unsigned int tstart, tstop;
 unsigned int cnt, wcnt;
 make_crc_table();
 *crc = 0xffffffff;
+jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
 if	( f_open( &MyFile, path, FA_CREATE_ALWAYS | FA_WRITE ) )
-	return 1;
+	return -1;
 while	( size )
 	{
 	cnt = 0;
@@ -148,14 +151,18 @@ while	( size )
 		}
 	icrc32( wbuf, cnt, crc );
 	if	( f_write( &MyFile, wbuf, cnt, &wcnt ) )
-		return 2;
+		return -2;
 	if	( wcnt != cnt )
-		return 3;
+		return -3;
 	}
 *crc ^= 0xffffffff;
 // fermer
 f_close(&MyFile);
-return 0;
+jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
+tstop -= tstart;
+if	( tstop < 0 )
+	tstop += 3600;
+return tstop;
 }
 #endif
 
@@ -755,84 +762,24 @@ while	(1)
 					}
 			break;
 			case '1' :	// creer un fichier de test
+			case '2' :
+			case '3' :
+			case '4' :
+			case '5' :
+			case '6' :
+			case '7' :
+			case '8' :
+			case '9' :
 				{
-				unsigned int retval, crc;
-				retval = write_test_file( 10000000, "test10M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test10M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test10M.bin", crc );
-				}
-			break;
-			case '2' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 20000000, "test20M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test20M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test20M.bin", crc );
-				}
-			break;
-			case '3' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 30000000, "test30M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test30M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test30M.bin", crc );
-				}
-			break;
-			case '4' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 40000000, "test40M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test40M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test40M.bin", crc );
-				}
-			break;
-			case '5' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 50000000, "test50M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test50M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test50M.bin", crc );
-				}
-			break;
-			case '6' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 60000000, "test60M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test60M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test60M.bin", crc );
-				}
-			break;
-			case '7' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 70000000, "test70M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test70M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test70M.bin", crc );
-				}
-			break;
-			case '8' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 80000000, "test80M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test80M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test80M.bin", crc );
-				}
-			break;
-			case '9' :	// creer un fichier de test
-				{
-				unsigned int retval, crc;
-				retval = write_test_file( 90000000, "test90M.bin", &crc );
-				if	( retval )
-					CDC_print("Failed : write %s : code %d\n", "test90M.bin", retval );
-				else	CDC_print("Ok : write %s : crc %08X\n", "test90M.bin", crc );
+				unsigned int retval, crc, size;
+				char fnam[32];
+				size = c - '0';
+				snprintf( fnam, sizeof(fnam), "test%d00M.bin", size );
+				size *= 100000000;
+				retval = write_test_file( size, fnam, &crc );
+				if	( retval < 0 )
+					CDC_print("Failed : write %s : code %d\n", fnam, retval );
+				else	CDC_print("Ok : write %s in %d s, crc %08X\n", fnam, retval, crc );
 				}
 			break;
 			default :
