@@ -16,22 +16,22 @@ int transcript_init( const JFONT * lafont, int x0, int dx )
 int a;
 trans.x0 = x0;
 trans.dx = dx;
-trans.linelen = dx / lafont->dx;	// caracteres imprimables par ligne
-trans.qlin = TRANSQ / trans.linelen;	// nombre de lignes
+trans.qcharvis = dx / lafont->dx;	// caracteres imprimables par ligne
 trans.qlinvis = ( LCD_DY / lafont->dy ) + 1;	// nombre de lignes visibles
 trans.jwri = 0;
 trans.font = lafont;
-trans.dy = MTOP + MBOT + trans.qlin * lafont->dy;
+trans.dy = MTOP + MBOT + TRANSQL * lafont->dy;
 trans.last_ypos = 0;
-for	( a = 0; a < TRANSQ; a += trans.linelen )
+for	( a = 0; a < TRANSQB; a += TRANSLL )
 	{
 	trans.circ[a] = 0;	// lignes toutes vides
 	}
 
 transprint( "Transcript V%s", VERSION );
-transprint( " %d bytes, %d wasted", TRANSQ, TRANSQ - ( trans.linelen * trans.qlin ) );
-transprint( " height %d px", trans.dy );
-transprint( " %d lines, pitch %d px", trans.qlin, trans.font->dy );
+// transprint( " height %dpx, pitch %dpx", trans.dy, trans.font->dy );
+transprint( " %d bytes, %d lines", TRANSQB, TRANSQL );
+transprint( " visible width %d chars", trans.qcharvis );
+transprint( " visible height %d lines", trans.qlinvis );
 return ( trans.dy );
 }
 
@@ -42,20 +42,20 @@ void transline( const char *txt )
 {
 int ali, aca;
 char c;
-ali = trans.jwri * trans.linelen;
-for	( aca = 0; aca < trans.linelen; ++aca )
+ali = trans.jwri * TRANSLL;
+for	( aca = 0; aca < TRANSLL; ++aca )
 	{
 	c = txt[aca];
 	trans.circ[ali+aca] = c;
 	if	( c == 0 )
 		break;
 	}
-trans.jwri = ( trans.jwri + 1 ) % trans.qlin;
+trans.jwri = ( trans.jwri + 1 ) % TRANSQL;
 }
 
 void transprint( const char *fmt, ... )
 {
-static char lbuf[FMTLEN];
+char lbuf[TRANSLL];
 va_list  argptr;
 va_start( argptr, fmt );
 vsnprintf( lbuf, sizeof(lbuf), fmt, argptr );
@@ -78,8 +78,8 @@ i0 = ( - ypos - MTOP ) / trans.font->dy;
 if	( i0 < 0 )
 	i0 = 0;
 i1 = i0 + trans.qlinvis;
-if	( i1 > trans.qlin )
-	i1 = trans.qlin;
+if	( i1 > TRANSQL )
+	i1 = TRANSQL;
 
 // obligatoire pour toute page utilisant des fonctions _yclip
 GC.ytop = 0;
@@ -95,8 +95,8 @@ GC.text_color = ARGB_GREEN;
 GC.font = trans.font;
 for	( i = i0; i < i1; ++i )
 	{
-	j = ( i + trans.jwri ) % trans.qlin;
-	ali = j * trans.linelen;
+	j = ( i + trans.jwri ) % TRANSQL;
+	ali = j * TRANSLL;
 	// jlcd_yclip_text( 0, ys, trans.circ + a ); <-- on deroule ça
 	if	(
 		( ys < GC.ybot ) &&
@@ -104,7 +104,7 @@ for	( i = i0; i < i1; ++i )
 		)
 		{
 		x = trans.x0;
-		for	( aca = 0; aca < trans.linelen; ++aca )
+		for	( aca = 0; aca < trans.qcharvis; ++aca )
 			{
 			c = trans.circ[ali+aca];
 			if	( c == 0 )
@@ -114,7 +114,7 @@ for	( i = i0; i < i1; ++i )
 			}
 		}
 	ys += GC.font->dy;
-	ali += trans.linelen;
+	ali += TRANSLL;
 	}
 }
 #endif

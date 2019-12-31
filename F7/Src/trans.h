@@ -1,22 +1,24 @@
 
+// buffer circulaire contenant des lignes de longueur fixe
+#define TRANSLL		(1<<6)		// capacite d'une ligne en bytes
+#define TRANSQL		(1<<8)		// nombre de lignes
+#define TRANSQB		(TRANSLL*TRANSQL)	// capacite en bytes
 
-#define TRANSQ	1024	// capacite en bytes
+// mise en page
 #define MTOP	10	// marge top en pixels
 #define MBOT	50	// marge bottom en pixels
-#define FMTLEN	64	// buffer pour transprint
 
 // le contexte transcript
 typedef struct {
 int x0;			// bord gauche en px
 int dx;			// largeur en px
 int dy;			// hauteur totale
-int linelen;		// caracteres par ligne
-int qlin;		// nombre de lignes
+int qcharvis;		// caracteres par ligne sur LCD
 int qlinvis;		// nombre de lignes visibles, meme partiellement
 int jwri;		// prochaine ligne a ecrire
-int last_ypos;		// a utiliser en cas de gel du scroll
+int last_ypos;		// pour gérer le gel du scroll
 const JFONT * font;
-char circ[TRANSQ];	// buffer circulaire
+char circ[TRANSQB];	// buffer circulaire
 } TRANStype;
 
 // contexte global

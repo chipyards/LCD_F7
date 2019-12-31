@@ -785,8 +785,11 @@ while	(1)
 			default :
 				CDC_print("cmd '%c'\r\n", c );
 			} // switch c
+		#elif defined USE_TRANSCRIPT
+		transprint("cmd 45678901234567890123456 %c%c%c", c, c, c );
+		CDC_print("cmd '%c'\n", c );
 		#else
-		CDC_print("cmd '%c'\r\n", c );
+		CDC_print("cmd '%c'\n", c );
 		#endif
 		}
 	}
