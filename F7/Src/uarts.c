@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include "s_gpio.h"
 #include "uarts.h"
+#include "logfifo.h"
 
 #ifdef USE_UART1
 // objet CDC ------------------------------------------------------------------------------
@@ -25,8 +26,29 @@ if	(
 	)
 	{
 	int c;
+	#ifdef USE_LOGFIFO
+	c = logfifo.circ[logfifo.rda];
+	if	( logfifo.rda == logfifo.wra )
+		{			// rien a transmettre, attendre
+		UART1_TX_INT_disable();
+		}
+	else if	( c == 0 )
+		{
+		LL_USART_TransmitData8( USART1, '\n' );
+		unsigned int rda;	// on doit calculer
+		rda = logfifo.rda;	// l'adresse du debut de la ligne suivante
+		rda /= LFIFOLL;
+		rda += 1;		// index ligne suivante
+		rda *= LFIFOLL;
+		logfifo.rda = rda % LFIFOQB;
+		}
+	else	{
+		LL_USART_TransmitData8( USART1, c );
+		++logfifo.rda;
+		}
+	#else
 	c = CDC.TXbuf[CDC.TXindex++];
-	if	( ( c ) && ( CDC.TXindex < QTX1 ) )
+	if	( ( c ) && ( CDC.TXindex <= QTX1 ) )
 		{
 		LL_USART_TransmitData8( USART1, c );
 		}
@@ -34,6 +56,7 @@ if	(
 		UART1_TX_INT_disable();
 		CDC.TXindex = -1;		// unlock
 		}
+	#endif
 	}
 if	(
 	( LL_USART_IsActiveFlag_RXNE( USART1 ) ) &&
@@ -55,6 +78,8 @@ UART1_init(9600);
 
 // envoyer une ligne de texte formattee
 // retourne 1 si renoncement pour cause de transmission en cours
+#ifdef USE_LOGFIFO
+#else
 int CDC_print( const char *fmt, ... )
 {
 va_list  argptr;
@@ -67,6 +92,7 @@ CDC.TXindex = 0;
 UART1_TX_INT_enable();
 return 0;
 }
+#endif
 
 // lire une commande
 int CDC_getcmd()

@@ -1,66 +1,32 @@
 /* scrollable transcript */
+// N.B. ce module necessite le module logfifo
+
 #include "options.h"
 #ifdef USE_TRANSCRIPT
 
-#include <stdio.h>
-#include <stdarg.h>
 #include "jlcd.h"
+#include "logfifo.h"
 #include "trans.h"
 
-// contexte global
+// contexte global (singleton)
 TRANStype trans;
 
 // constructeur - rend la hauteur totale de la page scrollable en px
 int transcript_init( const JFONT * lafont, int x0, int dx )
 {
-int a;
 trans.x0 = x0;
 trans.dx = dx;
 trans.qcharvis = dx / lafont->dx;	// caracteres imprimables par ligne
 trans.qlinvis = ( LCD_DY / lafont->dy ) + 1;	// nombre de lignes visibles
-trans.jwri = 0;
 trans.font = lafont;
-trans.dy = MTOP + MBOT + TRANSQL * lafont->dy;
+trans.dy = MTOP + MBOT + LFIFOQL * lafont->dy;
 trans.last_ypos = 0;
-for	( a = 0; a < TRANSQB; a += TRANSLL )
-	{
-	trans.circ[a] = 0;	// lignes toutes vides
-	}
-
-transprint( "Transcript V%s", VERSION );
+logfifo_init();
+LOGprint( "Transcript V%s", VERSION );
 // transprint( " height %dpx, pitch %dpx", trans.dy, trans.font->dy );
-transprint( " %d bytes, %d lines", TRANSQB, TRANSQL );
-transprint( " visible width %d chars", trans.qcharvis );
-transprint( " visible height %d lines", trans.qlinvis );
+LOGprint( " visible width %d chars", trans.qcharvis );
+LOGprint( " visible height %d lines", trans.qlinvis );
 return ( trans.dy );
-}
-
-// contexte global
-
-// ajouter une ligne de texte au transcript - sera tronquee si elle est trop longue
-void transline( const char *txt )
-{
-int ali, aca;
-char c;
-ali = trans.jwri * TRANSLL;
-for	( aca = 0; aca < TRANSLL; ++aca )
-	{
-	c = txt[aca];
-	trans.circ[ali+aca] = c;
-	if	( c == 0 )
-		break;
-	}
-trans.jwri = ( trans.jwri + 1 ) % TRANSQL;
-}
-
-void transprint( const char *fmt, ... )
-{
-char lbuf[TRANSLL];
-va_list  argptr;
-va_start( argptr, fmt );
-vsnprintf( lbuf, sizeof(lbuf), fmt, argptr );
-va_end( argptr );
-transline( lbuf );
 }
 
 // afficher le transcript
@@ -78,8 +44,8 @@ i0 = ( - ypos - MTOP ) / trans.font->dy;
 if	( i0 < 0 )
 	i0 = 0;
 i1 = i0 + trans.qlinvis;
-if	( i1 > TRANSQL )
-	i1 = TRANSQL;
+if	( i1 > LFIFOQL )
+	i1 = LFIFOQL;
 
 // obligatoire pour toute page utilisant des fonctions _yclip
 GC.ytop = 0;
@@ -95,8 +61,8 @@ GC.text_color = ARGB_GREEN;
 GC.font = trans.font;
 for	( i = i0; i < i1; ++i )
 	{
-	j = ( i + trans.jwri ) % TRANSQL;
-	ali = j * TRANSLL;
+	j = ( i + logfifo.wri ) % LFIFOQL;
+	ali = j * LFIFOLL;
 	// jlcd_yclip_text( 0, ys, trans.circ + a ); <-- on deroule ça
 	if	(
 		( ys < GC.ybot ) &&
@@ -106,7 +72,7 @@ for	( i = i0; i < i1; ++i )
 		x = trans.x0;
 		for	( aca = 0; aca < trans.qcharvis; ++aca )
 			{
-			c = trans.circ[ali+aca];
+			c = logfifo.circ[ali+aca];
 			if	( c == 0 )
 				break;
 			jlcd_yclip_char( x, ys, c );
@@ -114,7 +80,7 @@ for	( i = i0; i < i1; ++i )
 			}
 		}
 	ys += GC.font->dy;
-	ali += TRANSLL;
+	ali += LFIFOLL;
 	}
 }
 #endif

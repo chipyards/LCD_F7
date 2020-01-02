@@ -14,6 +14,7 @@
 #include "s_gpio.h"
 #include "stm32f7xx_ll_usart.h"
 #include "uarts.h"
+#include "logfifo.h"
 #include "param.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -508,12 +509,19 @@ idrag.yobjmax = 0;
 idrag.yobjmin = -LCD_DY;
 
 create_menu();
+
 #ifdef USE_TRANSCRIPT
 transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+#else
+#ifdef USE_LOGFIFO
+logfifo_init();
 #endif
+#endif
+
 #ifdef USE_PARAM
 param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 #endif
+
 init_zones_default();	// doit etre APRES create_menu
 
 jlcd_interrupt_on();
@@ -675,11 +683,8 @@ while	(1)
 	jrtc_get_day_time( &daytime );
 	if	( old_second != daytime.day_seconds )
 		{					// traitement cadence a la seconde
-		#ifdef USE_TRANSCRIPT
-		transprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
-		#endif
-		#ifdef USE_UART1
-		// CDC_print("-> %02d show %08x\r\n", daytime.ss, show_flags );
+		#ifdef USE_LOGFIFO
+		LOGprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
@@ -699,7 +704,7 @@ while	(1)
 		}
 
 	#ifdef USE_UART1
-	{			// attention : un seul CDC_print() par commande, car il n'y a pas de queue
+	{			// attention : un seul LOGprint() par commande, car il n'y a pas de queue
 	int c = CDC_getcmd();
 	if	( c > 0 )
 		{
@@ -708,27 +713,28 @@ while	(1)
 			{
 			case 'm' :	// linker le driver (connection soft, n'aborde pas le HW)
 				if	( FATFS_LinkDriver(&SD_Driver, SDPath) )
-					CDC_print("\nfailed : FATFS_LinkDriver\n");
+					LOGprint("failed : FATFS_LinkDriver");
 				else	{
 					// monter le FS
 					if	( f_mount( &SDFatFs, (TCHAR const*)SDPath, 0) )
-						CDC_print("\nFailed : f_mount\n");
-					else	CDC_print("\nOk : f_mount {%s}\n", SDPath );
+						LOGprint("Failed : f_mount");
+					else	LOGprint("Ok : f_mount {%s}", SDPath );
 					}
 			break;
 			case 'r' :	// ouvrir fichier en lecture
 				if	( f_open( &MyFile, "DEMO.TXT", FA_READ ) )
-					CDC_print("Failed : f_open r DEMO.TXT\n");
+					LOGprint("Failed : f_open r DEMO.TXT");
 				else	{
+					LOGprint("Ok : f_open r DEMO.TXT");
 					// lire 1 buffer
 					unsigned int bytesread = 0; char tbuf[64];
 					if	( f_read( &MyFile, tbuf, sizeof(tbuf), &bytesread ) )
-						CDC_print("Ok : f_open r DEMO.TXT\nFailed : f_read\n");
+						LOGprint("Failed : f_read");
 					else	{
 						if	( bytesread < sizeof(tbuf) )
 							tbuf[bytesread] = 0;
 						else	tbuf[sizeof(tbuf)-1] = 0;
-						CDC_print("Ok : f_open r DEMO.TXT\nOk : f_read %d bytes {%s}\n", bytesread, tbuf );
+						LOGprint("Ok : f_read %d bytes {%s}", bytesread, tbuf );
 						}
 					// fermer
 					f_close(&MyFile);
@@ -736,27 +742,30 @@ while	(1)
 			break;
 			case 'w' :	// ouvrir fichier en ecriture
 				if	( f_open( &MyFile, "WEMO.TXT", FA_CREATE_ALWAYS | FA_WRITE ) )
-					CDC_print("Failed : f_open w WEMO.TXT\n");
+					LOGprint("Failed : f_open w WEMO.TXT");
 				else	{
+					LOGprint("Ok : f_open w WEMO.TXT");
 					// ecrire un peu
 					unsigned int byteswritten = 0; const char wbuf[] = "One Love, One Heart";
 					// N.B. ne pas ecrire le NULL dans le fichier ==> sizeof(wbuf)-1
 					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						CDC_print("Ok : f_open w WEMO.TXT\nFailed : f_write\n");
-					else	CDC_print("Ok : f_open w WEMO.TXT\nOk : f_write %d bytes\n", byteswritten );
+						LOGprint("Failed : f_write");
+					else	LOGprint("Ok : f_write %d bytes", byteswritten );
 					// fermer
 					f_close(&MyFile);
 					}
 			break;
 			case 'a' :	// ouvrir fichier en append
 				if	( f_open( &MyFile, "WEMO.TXT", FA_OPEN_APPEND | FA_WRITE ) )
-					CDC_print("Failed : f_open a WEMO.TXT\n");
+					LOGprint("Failed : f_open a WEMO.TXT");
 				else	{
+					LOGprint("Ok : f_open a WEMO.TXT");
+
 					// ecrire un peu
 					unsigned int byteswritten = 0; const char wbuf[] = " !";
 					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						CDC_print("Ok : f_open a WEMO.TXT\nFailed : f_write\n");
-					else	CDC_print("Ok : f_open a WEMO.TXT\nOk : f_write %d bytes\n", byteswritten );
+						LOGprint("Failed : f_write");
+					else	LOGprint("Ok : f_write %d bytes", byteswritten );
 					// fermer
 					f_close(&MyFile);
 					}
@@ -778,20 +787,22 @@ while	(1)
 				size *= 100000000;
 				retval = write_test_file( size, fnam, &crc );
 				if	( retval < 0 )
-					CDC_print("Failed : write %s : code %d\n", fnam, retval );
-				else	CDC_print("Ok : write %s in %d s, crc %08X\n", fnam, retval, crc );
+					LOGprint("Failed : write %s : code %d", fnam, retval );
+				else	LOGprint("Ok : write %s in %d s, crc %08X", fnam, retval, crc );
 				}
 			break;
 			default :
-				CDC_print("cmd '%c'\r\n", c );
+				LOGprint("cmd '%c'", c );
 			} // switch c
-		#elif defined USE_TRANSCRIPT
-		transprint("cmd 45678901234567890123456 %c%c%c", c, c, c );
-		CDC_print("cmd '%c'\n", c );
 		#else
-		CDC_print("cmd '%c'\n", c );
+		LOGprint("cmd '%c'", c );
+		if	( c == '0' )
+			LOGprint("0123456789\n012345\n678901234567890123456789");
 		#endif
 		}
+	// auto-start de l'UART tx interrupt
+	//if	( logfifo.rda != logfifo.wra )
+	//	UART1_TX_INT_enable();
 	}
 	#endif
 
