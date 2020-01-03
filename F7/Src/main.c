@@ -7,15 +7,28 @@
 #include "jlcd.h"
 #include "jrtc.h"
 #include "idrag.h"
+#ifdef USE_DEMO
 #include "demo.h"
+#endif
+#ifdef USE_TRANSCRIPT
 #include "trans.h"
+#endif
 #include "menu.h"
 #include "adju.h"
 #include "s_gpio.h"
+#ifdef USE_UART1
 #include "stm32f7xx_ll_usart.h"
 #include "uarts.h"
+#endif
+#ifdef USE_LOGFIFO
 #include "logfifo.h"
+#endif
+#ifdef USE_PARAM
 #include "param.h"
+#endif
+#ifdef USE_AUDIO
+#include "audio.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -524,6 +537,21 @@ param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 
 init_zones_default();	// doit etre APRES create_menu
 
+#ifdef USE_AUDIO
+int retval;
+if	( BSP_PB_GetState(BUTTON_TAMPER) )
+	{
+	retval = audio_demo_init( 1 );
+	LOGprint("AUDIO init (mic) %d", retval );
+	}
+else	{
+	retval = audio_demo_init( 0 );
+	LOGprint("AUDIO init (line) %d", retval );
+	}
+audio_start();
+LOGprint("AUDIO start %d DMA per sec.", DMA_PER_SEC );
+#endif
+
 jlcd_interrupt_on();
 jlcd_panel_on();
 
@@ -684,7 +712,15 @@ while	(1)
 	if	( old_second != daytime.day_seconds )
 		{					// traitement cadence a la seconde
 		#ifdef USE_LOGFIFO
+		#ifdef USE_AUDIO
+		static int dma_cnt = 0;
+		//LOGprint("peak %d, ddma %d", peak_in_sl16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
+		//peak_in_sl16 = 0;
+		//LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
+		LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
+		#else
 		LOGprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
+		#endif
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
@@ -796,8 +832,18 @@ while	(1)
 			} // switch c
 		#else
 		LOGprint("cmd '%c'", c );
-		if	( c == '0' )
-			LOGprint("0123456789\n012345\n678901234567890123456789");
+		#ifdef USE_AUDIO
+		switch	(c)
+			{
+			static int out_volume = 47;
+			case '>' :	if	( ++out_volume > 63 ) out_volume = 63;
+					set_out_volume( out_volume );
+					LOGprint("out vol. %d", out_volume ); break;
+			case '<' :	if	( --out_volume < 0 ) out_volume = 0;
+					set_out_volume( out_volume );
+					LOGprint("out vol. %d", out_volume ); break;
+			}
+		#endif
 		#endif
 		}
 	// auto-start de l'UART tx interrupt
