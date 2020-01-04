@@ -2,9 +2,9 @@
 #ifdef USE_AUDIO
 // Audio experiments :
     // simple echo (loopback)
-    // #define ECHO
+    #define ECHO
     // generateur
-    #define GENE
+    // #define GENE
 
 #include "stm32f7xx_hal.h"
 #include "stm32746g_discovery.h"
@@ -12,15 +12,28 @@
 #include "audio.h"
 #include "stdlib.h"	// juste pour abs() !
 
-// dma buffers
-short rxbuf[AQBUF];	// stereo
-short txbuf[AQBUF];	// stereo
+// AUDIO buffers
+// ne marche que si les buffers DMA sont AVANT les FIFOS
+// sinon, corruption du signal par un signal aleatoire quantifie sur 8 samples
+typedef struct {
+short txbuf[AQBUF];	// DMA, stereo entrelace
+short rxbuf[AQBUF];	// DMA, stereo entrelace
+short Lfifo[FQBUF];	// FIFO echo, mono
+short Rfifo[FQBUF];	// FIFO echo, mono
+} AUDIObuffers_type;
 
-#ifdef ECHO
+AUDIObuffers_type abuf;
+
+//short rxbuf[AQBUF];	// stereo
+//short txbuf[AQBUF];	// stereo
+//short * rxbuf;	// stereo
+//short * txbuf;	// stereo
+
 // delay fifo pour la demo
-short Lfifo[FQBUF];	// mono
-short Rfifo[FQBUF];	// mono
-#endif
+//short Lfifo[FQBUF];	// mono
+//short Rfifo[FQBUF];	// mono
+//short *Lfifo;
+//short *Rfifo;
 int fifoW;
 int fifoR;
 
@@ -40,6 +53,10 @@ int peak_in_sl16 = 0;			// peak input value
 int audio_demo_init( int mic_input )
 {
 int retval;
+//Lfifo = malloc(FQBUF*2);
+//Rfifo = malloc(FQBUF*2);
+//txbuf = malloc(AQBUF*2);
+//rxbuf = malloc(AQBUF*2);
 if	( mic_input )
 	retval = BSP_AUDIO_IN_OUT_Init( INPUT_DEVICE_DIGITAL_MICROPHONE_2,
 					OUTPUT_DEVICE_HEADPHONE, out_volume, FSAMP );
@@ -48,13 +65,15 @@ else	retval = BSP_AUDIO_IN_OUT_Init( INPUT_DEVICE_INPUT_LINE_1,
 // res.	retval = BSP_AUDIO_OUT_Init( OUTPUT_DEVICE_HEADPHONE, out_volume, FSAMP );
 // res. retval = BSP_AUDIO_IN_Init( INPUT_DEVICE_INPUT_LINE_1, volume, FSAMP );
 BSP_AUDIO_OUT_SetAudioFrameSlot( CODEC_AUDIOFRAME_SLOT_02 );
+fifoR = 0;
+fifoW = FQBUF - 600; //FSAMP/2;	// 0.5s (N.B. il y a un fifo par canal)
 return retval;
 }
 
 void audio_start(void)
 {
-BSP_AUDIO_OUT_Play( (uint16_t*)txbuf, AQBUF*2 );	// ridicule *2
-BSP_AUDIO_IN_Record( (uint16_t*)rxbuf, AQBUF );
+BSP_AUDIO_OUT_Play( (uint16_t*)(abuf.txbuf), AQBUF*2 );	// ridicule *2
+BSP_AUDIO_IN_Record( (uint16_t*)(abuf.rxbuf), AQBUF );
 wm8994_Set_DMIC_Volume( mic_volume );
 wm8994_Set_line_in_Volume( line_in_volume );
 wm8994_Set_out_Volume( out_volume );
@@ -81,8 +100,35 @@ wm8994_Set_out_Volume( out_volume );
 void set_out_volume( int volume )
 {
 out_volume = volume;
+if	( out_volume > 63 ) out_volume = 63;
+if	( out_volume < 0 ) out_volume = 0;
 wm8994_Set_out_Volume( out_volume );
 }
+
+// 1.5 dB/step, 0dB = 11, full scale 51
+void set_line_in_volume( int volume )
+{
+line_in_volume = volume;
+if	( line_in_volume > 51 ) line_in_volume = 51;
+if	( line_in_volume < 0 ) line_in_volume = 0;
+wm8994_Set_line_in_Volume( line_in_volume );
+}
+
+// 0.375 dB/step, 0 = mute, FS = 239
+void set_mic_volume( int volume )
+{
+mic_volume = volume;
+if	( mic_volume < 0 ) mic_volume = 0;
+if	( mic_volume > 239 ) mic_volume = 239;
+wm8994_Set_DMIC_Volume( mic_volume );
+}
+
+int get_out_volume(void)
+{ return out_volume; }
+int get_line_in_volume(void)
+{ return line_in_volume; }
+int get_mic_volume(void)
+{ return mic_volume; }
 
 /** private functions */
 
@@ -90,26 +136,26 @@ wm8994_Set_out_Volume( out_volume );
 // sound processing (demo-specific) : sound source for tx
 int get_next_left_sample(void)
 {
-int val = (int)Lfifo[ fifoR & FMASK ];
+int val = (int)abuf.Lfifo[ fifoR & FMASK ];
 return val;
 }
 
 int get_next_right_sample(void)
 {
-int val = (int)Rfifo[ fifoR & FMASK ];
+int val = (int)abuf.Rfifo[ fifoR & FMASK ];
 return val;
 }
 
 // sound processing (demo-specific) : sound sink for rx
 void put_next_left_sample( short val )
 {
-Lfifo[ fifoW & FMASK ] = val;
+abuf.Lfifo[ fifoW & FMASK ] = val;
 if	( abs(val) > peak_in_sl16 )
 	peak_in_sl16 = abs(val);
 }
 void put_next_right_sample( short val )
 {
-Rfifo[ fifoW & FMASK ] = val;
+abuf.Rfifo[ fifoW & FMASK ] = val;
 }
 #endif
 
@@ -145,9 +191,8 @@ void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
 {
 for	( int i = 0; i < (AQBUF/2); i+=2 )
 	{
-	txbuf[i]   = 0; // get_next_left_sample();
-			// cette manip bizarre sert a visualiser de "demi buffer"
-	txbuf[i+1] = get_next_right_sample();
+	abuf.txbuf[i]   = get_next_left_sample();
+	abuf.txbuf[i+1] = get_next_right_sample();
 	++fifoR;
 	}
 halfo_cnt++;
@@ -157,8 +202,8 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
 {
 for	( int i = (AQBUF/2); i < AQBUF; i+=2 )
 	{
-	txbuf[i]   = get_next_left_sample();
-	txbuf[i+1] = get_next_right_sample();
+	abuf.txbuf[i]   = get_next_left_sample();
+	abuf.txbuf[i+1] = get_next_right_sample();
 	++fifoR;
 	}
 fullo_cnt++;
@@ -168,8 +213,8 @@ void BSP_AUDIO_IN_HalfTransfer_CallBack(void)
 {
 for	( int i = 0; i < (AQBUF/2); i+=2 )
 	{
-	put_next_left_sample(rxbuf[i]);
-	put_next_right_sample(rxbuf[i+1]);
+	put_next_left_sample(abuf.rxbuf[i]);
+	put_next_right_sample(abuf.rxbuf[i+1]);
 	++fifoW;
 	}
 halfi_cnt++;
@@ -179,8 +224,8 @@ void BSP_AUDIO_IN_TransferComplete_CallBack(void)
 {
 for	( int i = (AQBUF/2); i < AQBUF; i+=2 )
 	{
-	put_next_left_sample(rxbuf[i]);
-	put_next_right_sample(rxbuf[i+1]);
+	put_next_left_sample(abuf.rxbuf[i]);
+	put_next_right_sample(abuf.rxbuf[i+1]);
 	++fifoW;
 	}
 fulli_cnt++;
@@ -188,23 +233,22 @@ fulli_cnt++;
 
 // DMA interrupt handlers
 
-/* SAI handler declared in "stm32746g_discovery_audio.c" file */
+/* SAI handle declared in "stm32746g_discovery_audio.c" file */
 extern SAI_HandleTypeDef haudio_out_sai;
-/* I2S handler declared in "stm32746g_discovery_audio.c" file */
+/* I2S handle declared in "stm32746g_discovery_audio.c" file */
 extern SAI_HandleTypeDef haudio_in_sai;
 
-/**
-  * @brief This function handles DMA2 Stream 4 interrupt request.
-  */
-void AUDIO_OUT_SAIx_DMAx_IRQHandler(void)
+// ces 2 fonctions sont des vrais interrupt handlers definis dans le startup,
+// elles appellent une unique fonction de stm32f7xx_hal_dma.c, qui va appeler
+// les user callbacks genre BSP_AUDIO_XX_yy_CallBack() definies ci-dessus
+// choisies en fonction de la handle qui leur est passee et des flags internes
+// du controleur de DMA
+void DMA2_Stream4_IRQHandler(void)
 {
   HAL_DMA_IRQHandler(haudio_out_sai.hdmatx);
 }
 
-/**
-  * @brief This function handles DMA2 Stream 7 interrupt request.
-  */
-void AUDIO_IN_SAIx_DMAx_IRQHandler(void)
+void DMA2_Stream7_IRQHandler(void)
 {
   HAL_DMA_IRQHandler(haudio_in_sai.hdmarx);
 }

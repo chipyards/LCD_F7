@@ -222,7 +222,8 @@ uint8_t BSP_AUDIO_OUT_Init(uint16_t OutputDevice, uint8_t Volume, uint32_t Audio
   */
 uint8_t BSP_AUDIO_OUT_Play(uint16_t* pBuffer, uint32_t Size)
 {
-  /* Call the audio Codec Play function */
+  /* Call the audio Codec Play function
+   * RIDICULE cette fonction ignore size */
   if(wm8994_Play(pBuffer, Size) != 0)
   {  
     return AUDIO_ERROR;

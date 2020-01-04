@@ -500,6 +500,7 @@ __HAL_RCC_USB_OTG_HS_CLK_DISABLE();
 __HAL_RCC_USB_OTG_HS_ULPI_CLK_DISABLE();
 __HAL_RCC_ETH_CLK_DISABLE();
 #endif
+
 jlcd_sdram_init();
 jlcd_gpio2();
 jlcd_init();
@@ -531,12 +532,6 @@ logfifo_init();
 #endif
 #endif
 
-#ifdef USE_PARAM
-param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
-#endif
-
-init_zones_default();	// doit etre APRES create_menu
-
 #ifdef USE_AUDIO
 int retval;
 if	( BSP_PB_GetState(BUTTON_TAMPER) )
@@ -549,8 +544,16 @@ else	{
 	LOGprint("AUDIO init (line) %d", retval );
 	}
 audio_start();
-LOGprint("AUDIO start %d DMA per sec.", DMA_PER_SEC );
+LOGprint("AUDIO start %d Hz", FSAMP );
+LOGprint("%d DMA per sec.", DMA_PER_SEC );
 #endif
+
+#ifdef USE_PARAM
+param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+#endif
+
+init_zones_default();	// doit etre APRES create_menu
+
 
 jlcd_interrupt_on();
 jlcd_panel_on();
@@ -714,9 +717,9 @@ while	(1)
 		#ifdef USE_LOGFIFO
 		#ifdef USE_AUDIO
 		static int dma_cnt = 0;
-		//LOGprint("peak %d, ddma %d", peak_in_sl16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
-		//peak_in_sl16 = 0;
-		//LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
+		LOGprint("peak %d, ddma %d", peak_in_sl16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
+		peak_in_sl16 = 0;
+		LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
 		LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
 		#else
 		LOGprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
@@ -835,20 +838,22 @@ while	(1)
 		#ifdef USE_AUDIO
 		switch	(c)
 			{
-			static int out_volume = 47;
-			case '>' :	if	( ++out_volume > 63 ) out_volume = 63;
-					set_out_volume( out_volume );
-					LOGprint("out vol. %d", out_volume ); break;
-			case '<' :	if	( --out_volume < 0 ) out_volume = 0;
-					set_out_volume( out_volume );
-					LOGprint("out vol. %d", out_volume ); break;
+			case '>' :	set_out_volume( get_out_volume() + 1 );
+					LOGprint("out vol. %d", get_out_volume() ); break;
+			case '<' :	set_out_volume( get_out_volume() - 1 );
+					LOGprint("out vol. %d", get_out_volume() ); break;
+			case 'W' :	set_line_in_volume( get_line_in_volume() + 1 );
+					LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+			case 'w' :	set_line_in_volume( get_line_in_volume() - 1 );
+					LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+			case 'X' :	set_mic_volume( get_mic_volume() + 1 );
+					LOGprint("mic vol. %d", get_mic_volume() ); break;
+			case 'x' :	set_mic_volume( get_mic_volume() - 1 );
+					LOGprint("mic vol. %d", get_mic_volume() ); break;
 			}
 		#endif
 		#endif
 		}
-	// auto-start de l'UART tx interrupt
-	//if	( logfifo.rda != logfifo.wra )
-	//	UART1_TX_INT_enable();
 	}
 	#endif
 
