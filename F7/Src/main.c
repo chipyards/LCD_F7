@@ -29,6 +29,9 @@
 #ifdef USE_AUDIO
 #include "audio.h"
 #endif
+#ifdef USE_SDCARD
+#include "sdcard.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -101,13 +104,6 @@ int flash_bytes = 0;
 int flash_errs = 0;
 #endif
 
-#ifdef USE_SDCARD
-#include "ff_gen_drv.h"
-#include "sd_diskio.h"
-FATFS SDFatFs;  /* File system object for SD card logical drive */
-FIL MyFile;     /* File object */
-char SDPath[4]; /* SD card logical drive path */
-#endif
 
 // ----------------------  Interrupts ----------------------
 
@@ -117,68 +113,6 @@ void SysTick_Handler(void)
 }
 
 // ---------------------- application ----------------------
-
-#ifdef USE_SDCARD
-#define CRC_POLY 0xEDB88320	// polynome de zlib, zip et ethernet
-static unsigned int crc_table[256];
-// The table is simply the CRC of all possible eight bit values.
-static void make_crc_table()
-{
-unsigned int c, n, k;
-for ( n = 0; n < 256; n++ )
-    {
-    c = n;
-    for ( k = 0; k < 8; k++ )
-        c = c & 1 ? CRC_POLY ^ (c >> 1) : c >> 1;
-    crc_table[n] = c;
-    }
-}
-// cumuler le calcul du CRC
-// initialiser avec :	crc = 0xffffffff;
-// finir avec :		crc ^= 0xffffffff;
-static void icrc32( const unsigned char *buf, int len, unsigned int * crc )
-{
-do	{
-	*crc = crc_table[((*crc) ^ (*buf++)) & 0xff] ^ ((*crc) >> 8);
-	} while (--len);
-}
-// random file with CRC - size is in bytes
-// rend la duree en s, ou <0 si erreur
-#define QBUF 32768
-static int write_test_file( unsigned int size, const char * path, unsigned int * crc )
-{
-unsigned char wbuf[QBUF];
-unsigned int tstart, tstop;
-unsigned int cnt, wcnt;
-make_crc_table();
-*crc = 0xffffffff;
-jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
-if	( f_open( &MyFile, path, FA_CREATE_ALWAYS | FA_WRITE ) )
-	return -1;
-while	( size )
-	{
-	cnt = 0;
-	while	( ( size ) && ( cnt < QBUF ) )
-		{
-		wbuf[cnt] = rand();
-		--size; ++cnt;
-		}
-	icrc32( wbuf, cnt, crc );
-	if	( f_write( &MyFile, wbuf, cnt, &wcnt ) )
-		return -2;
-	if	( wcnt != cnt )
-		return -3;
-	}
-*crc ^= 0xffffffff;
-// fermer
-f_close(&MyFile);
-jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
-tstop -= tstart;
-if	( tstop < 0 )
-	tstop += 3600;
-return tstop;
-}
-#endif
 
 // trace reticule
 void draw_reticle( int x, int y )
@@ -459,6 +393,74 @@ if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
 	}
 }
 
+// interpreteur de commandes sur 1 char
+static void cmd_handler( int c )
+{
+int unused = 1;
+#ifdef USE_SDCARD
+int retval;
+char testbuf[64];
+unused = 0;
+switch	( c )
+	{
+	case 'm' :	// linker le driver etvmonter le FS
+		retval = SDCard_init();
+		LOGprint("SDCard_init : %d", retval );
+	break;
+	case 'r' :	// simple read test
+		retval = SDCard_read_test( "DEMO.TXT", testbuf, sizeof(testbuf) );
+		LOGprint("SDCard_read_test : %d", retval );
+		if	( retval > 0 )
+			LOGprint(testbuf);
+	break;
+	case 'w' :	// simple write test
+		retval = SDCard_write_test( "WEMO.TXT", "More Love", 9 );
+		LOGprint("SDCard_write_test : %d", retval );
+	break;
+	case 'a' :	// ouvrir fichier en append
+		retval = SDCard_append_test( "WEMO.TXT", " Peace", 6 );
+		LOGprint("SDCard_append_test : %d", retval );
+	break;
+	case '1' :	// creer un fichier de test
+	case '2' :	case '3' :	case '4' :	case '5' :
+	case '6' :	case '7' :	case '8' :	case '9' :
+		{
+		unsigned int retval, crc, size;
+		char fnam[32];
+		size = c - '0';
+		snprintf( fnam, sizeof(fnam), "test%d00M.bin", size );
+		size *= 100000000;
+		retval = SDCard_random_write_test( size, fnam, &crc );
+		if	( retval < 0 )
+			LOGprint("Failed : write %s : code %d", fnam, retval );
+		else	LOGprint("Ok : write %s in %d s, crc %08X", fnam, retval, crc );
+		}
+	break;
+	default : unused = 1;
+	} // switch c
+#endif
+#ifdef USE_AUDIO
+unused = 0;
+switch	(c)
+	{
+	case '>' :	set_out_volume( get_out_volume() + 1 );
+			LOGprint("out vol. %d", get_out_volume() ); break;
+	case '<' :	set_out_volume( get_out_volume() - 1 );
+			LOGprint("out vol. %d", get_out_volume() ); break;
+	case 'W' :	set_line_in_volume( get_line_in_volume() + 1 );
+			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+	case 'w' :	set_line_in_volume( get_line_in_volume() - 1 );
+			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+	case 'X' :	set_mic_volume( get_mic_volume() + 1 );
+			LOGprint("mic vol. %d", get_mic_volume() ); break;
+	case 'x' :	set_mic_volume( get_mic_volume() - 1 );
+			LOGprint("mic vol. %d", get_mic_volume() ); break;
+	}
+#endif
+if	( unused )
+	LOGprint("cmd '%c'", c );
+}
+
 int main(void)
 {
 TS_StateTypeDef TS_State;
@@ -719,8 +721,8 @@ while	(1)
 		static int dma_cnt = 0;
 		LOGprint("peak %d, ddma %d", peak_in_sl16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
 		peak_in_sl16 = 0;
-		LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
-		LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
+		// LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
+		// LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
 		#else
 		LOGprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
 		#endif
@@ -743,134 +745,21 @@ while	(1)
 		}
 
 	#ifdef USE_UART1
-	{			// attention : un seul LOGprint() par commande, car il n'y a pas de queue
+	{
 	int c = CDC_getcmd();
 	if	( c > 0 )
-		{
-		#ifdef USE_SDCARD
-		switch	( c )
-			{
-			case 'm' :	// linker le driver (connection soft, n'aborde pas le HW)
-				if	( FATFS_LinkDriver(&SD_Driver, SDPath) )
-					LOGprint("failed : FATFS_LinkDriver");
-				else	{
-					// monter le FS
-					if	( f_mount( &SDFatFs, (TCHAR const*)SDPath, 0) )
-						LOGprint("Failed : f_mount");
-					else	LOGprint("Ok : f_mount {%s}", SDPath );
-					}
-			break;
-			case 'r' :	// ouvrir fichier en lecture
-				if	( f_open( &MyFile, "DEMO.TXT", FA_READ ) )
-					LOGprint("Failed : f_open r DEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open r DEMO.TXT");
-					// lire 1 buffer
-					unsigned int bytesread = 0; char tbuf[64];
-					if	( f_read( &MyFile, tbuf, sizeof(tbuf), &bytesread ) )
-						LOGprint("Failed : f_read");
-					else	{
-						if	( bytesread < sizeof(tbuf) )
-							tbuf[bytesread] = 0;
-						else	tbuf[sizeof(tbuf)-1] = 0;
-						LOGprint("Ok : f_read %d bytes {%s}", bytesread, tbuf );
-						}
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case 'w' :	// ouvrir fichier en ecriture
-				if	( f_open( &MyFile, "WEMO.TXT", FA_CREATE_ALWAYS | FA_WRITE ) )
-					LOGprint("Failed : f_open w WEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open w WEMO.TXT");
-					// ecrire un peu
-					unsigned int byteswritten = 0; const char wbuf[] = "One Love, One Heart";
-					// N.B. ne pas ecrire le NULL dans le fichier ==> sizeof(wbuf)-1
-					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						LOGprint("Failed : f_write");
-					else	LOGprint("Ok : f_write %d bytes", byteswritten );
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case 'a' :	// ouvrir fichier en append
-				if	( f_open( &MyFile, "WEMO.TXT", FA_OPEN_APPEND | FA_WRITE ) )
-					LOGprint("Failed : f_open a WEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open a WEMO.TXT");
-
-					// ecrire un peu
-					unsigned int byteswritten = 0; const char wbuf[] = " !";
-					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						LOGprint("Failed : f_write");
-					else	LOGprint("Ok : f_write %d bytes", byteswritten );
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case '1' :	// creer un fichier de test
-			case '2' :
-			case '3' :
-			case '4' :
-			case '5' :
-			case '6' :
-			case '7' :
-			case '8' :
-			case '9' :
-				{
-				unsigned int retval, crc, size;
-				char fnam[32];
-				size = c - '0';
-				snprintf( fnam, sizeof(fnam), "test%d00M.bin", size );
-				size *= 100000000;
-				retval = write_test_file( size, fnam, &crc );
-				if	( retval < 0 )
-					LOGprint("Failed : write %s : code %d", fnam, retval );
-				else	LOGprint("Ok : write %s in %d s, crc %08X", fnam, retval, crc );
-				}
-			break;
-			default :
-				LOGprint("cmd '%c'", c );
-			} // switch c
-		#else
-		LOGprint("cmd '%c'", c );
-		#ifdef USE_AUDIO
-		switch	(c)
-			{
-			case '>' :	set_out_volume( get_out_volume() + 1 );
-					LOGprint("out vol. %d", get_out_volume() ); break;
-			case '<' :	set_out_volume( get_out_volume() - 1 );
-					LOGprint("out vol. %d", get_out_volume() ); break;
-			case 'W' :	set_line_in_volume( get_line_in_volume() + 1 );
-					LOGprint("line_in vol. %d", get_line_in_volume() ); break;
-			case 'w' :	set_line_in_volume( get_line_in_volume() - 1 );
-					LOGprint("line_in vol. %d", get_line_in_volume() ); break;
-			case 'X' :	set_mic_volume( get_mic_volume() + 1 );
-					LOGprint("mic vol. %d", get_mic_volume() ); break;
-			case 'x' :	set_mic_volume( get_mic_volume() - 1 );
-					LOGprint("mic vol. %d", get_mic_volume() ); break;
-			}
-		#endif
-		#endif
-		}
+		cmd_handler( c );
 	}
 	#endif
 
-	#ifdef PROFILER_PI2
-	profile_D8(0);	// PI2 aka D8 profiler pin
-	#endif
+	//profile_D8(0);	// PI2 aka D8 profiler pin
 
 	#ifdef GREEN_CPU
 	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
 		{
-		#ifdef PROFILER_PI2
 		// profile_D13(0);	// PI1
-		#endif
 		HAL_PWR_EnterSLEEPMode( PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI );
-		#ifdef PROFILER_PI2
 		// profile_D13(1);	// PI1
-		#endif
 		}
 	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
 	#else
@@ -879,9 +768,7 @@ while	(1)
 	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
 	#endif
 
-	#ifdef PROFILER_PI2
-	profile_D8(1);
-	#endif
+	//profile_D8(1);
 	}
 }
 

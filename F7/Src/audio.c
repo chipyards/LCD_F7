@@ -65,8 +65,12 @@ else	retval = BSP_AUDIO_IN_OUT_Init( INPUT_DEVICE_INPUT_LINE_1,
 // res.	retval = BSP_AUDIO_OUT_Init( OUTPUT_DEVICE_HEADPHONE, out_volume, FSAMP );
 // res. retval = BSP_AUDIO_IN_Init( INPUT_DEVICE_INPUT_LINE_1, volume, FSAMP );
 BSP_AUDIO_OUT_SetAudioFrameSlot( CODEC_AUDIOFRAME_SLOT_02 );
+unsigned int delai;	// le delai de l'echo exprime en frames
+			// le minimum serait AQBUF/4, en effet chaque transfert DMA fait AQBUF/2 samples
+			// le max serait FQBUF - AQBUF/4
+delai = AQBUF/4;
 fifoR = 0;
-fifoW = FQBUF - 600; //FSAMP/2;	// 0.5s (N.B. il y a un fifo par canal)
+fifoW = delai;
 return retval;
 }
 
@@ -245,12 +249,16 @@ extern SAI_HandleTypeDef haudio_in_sai;
 // du controleur de DMA
 void DMA2_Stream4_IRQHandler(void)
 {
+//profile_D8( 1 );
   HAL_DMA_IRQHandler(haudio_out_sai.hdmatx);
+//profile_D8( 0 );
 }
 
 void DMA2_Stream7_IRQHandler(void)
 {
+//profile_D13( 1 );
   HAL_DMA_IRQHandler(haudio_in_sai.hdmarx);
+//profile_D13( 0 );
 }
 
 

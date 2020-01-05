@@ -10,6 +10,8 @@ int mm;		// mois 1..12
 int day_seconds;
 } DAY_TIME;
 
+extern DAY_TIME daytime;	// le temps sous diverses formes
+
 // mettre la RTC a l'heure a partir de notre structure a nous
 void jrtc_set_day_time( DAY_TIME * d );
 

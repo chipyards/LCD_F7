@@ -3,7 +3,7 @@
 #define FSAMP 44100
 
 // dma buffers
-#define AQBUF 256	// en short (stereo buffer)
+#define AQBUF 32	// en short (stereo buffer)
 #define DMA_PER_SEC	(FSAMP/(AQBUF/2)) // buffers entiers par s.
 
 // delay fifo pour la demo
