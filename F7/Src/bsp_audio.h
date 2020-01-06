@@ -102,10 +102,11 @@
 #define AUDIO_IN_SAIx_SD_GPIO_PORT               GPIOG
 #define AUDIO_IN_SAIx_SD_PIN                     GPIO_PIN_10
 
-#define AUDIO_IN_INT_GPIO_ENABLE()               __HAL_RCC_GPIOH_CLK_ENABLE()
-#define AUDIO_IN_INT_GPIO_PORT                   GPIOH
-#define AUDIO_IN_INT_GPIO_PIN                    GPIO_PIN_15
-#define AUDIO_IN_INT_IRQ                         EXTI15_10_IRQn
+// PH15 c'est seulement TP3
+// #define AUDIO_IN_INT_GPIO_ENABLE()               __HAL_RCC_GPIOH_CLK_ENABLE()
+// #define AUDIO_IN_INT_GPIO_PORT                   GPIOH
+// #define AUDIO_IN_INT_GPIO_PIN                    GPIO_PIN_15
+// #define AUDIO_IN_INT_IRQ                         EXTI15_10_IRQn
 
 /* SAI DMA Stream definitions */
 #define AUDIO_IN_SAIx_DMAx_CLK_ENABLE()          __HAL_RCC_DMA2_CLK_ENABLE()
@@ -116,7 +117,7 @@
 #define AUDIO_IN_SAIx_DMAx_MEM_DATA_SIZE         DMA_MDATAALIGN_HALFWORD
 
 #define AUDIO_IN_SAIx_DMAx_IRQHandler            DMA2_Stream7_IRQHandler
-#define AUDIO_IN_INT_IRQHandler                  EXTI15_10_IRQHandler
+// #define AUDIO_IN_INT_IRQHandler                  EXTI15_10_IRQHandler
 
 /* Select the interrupt preemption priority and subpriority for the IT/DMA interrupt */
 #define AUDIO_IN_IRQ_PREPRIO                     ((uint32_t)6)   /* Select the preemption priority level(0 is the highest) */

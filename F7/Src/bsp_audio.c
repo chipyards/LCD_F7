@@ -1091,14 +1091,15 @@ __weak void BSP_AUDIO_IN_MspInit(SAI_HandleTypeDef *hsai, void *Params)
   gpio_init_structure.Alternate = AUDIO_IN_SAIx_SD_AF;
   HAL_GPIO_Init(AUDIO_IN_SAIx_SD_GPIO_PORT, &gpio_init_structure);
 
+  // PH15 c'est seulement TP3, sert a rien
   /* Enable Audio INT GPIO clock */
-  AUDIO_IN_INT_GPIO_ENABLE();
+  // AUDIO_IN_INT_GPIO_ENABLE();
   /* Audio INT pin configuration: input */
-  gpio_init_structure.Pin = AUDIO_IN_INT_GPIO_PIN;
-  gpio_init_structure.Mode = GPIO_MODE_INPUT;
-  gpio_init_structure.Pull = GPIO_NOPULL;
-  gpio_init_structure.Speed = GPIO_SPEED_FAST;
-  HAL_GPIO_Init(AUDIO_IN_INT_GPIO_PORT, &gpio_init_structure);
+  // gpio_init_structure.Pin = AUDIO_IN_INT_GPIO_PIN;
+  // gpio_init_structure.Mode = GPIO_MODE_INPUT;
+  // gpio_init_structure.Pull = GPIO_NOPULL;
+  // gpio_init_structure.Speed = GPIO_SPEED_FAST;
+  // HAL_GPIO_Init(AUDIO_IN_INT_GPIO_PORT, &gpio_init_structure);
 
   /* Enable the DMA clock */
   AUDIO_IN_SAIx_DMAx_CLK_ENABLE();
@@ -1136,8 +1137,9 @@ __weak void BSP_AUDIO_IN_MspInit(SAI_HandleTypeDef *hsai, void *Params)
   HAL_NVIC_EnableIRQ(AUDIO_IN_SAIx_DMAx_IRQ);
 
   /* Audio INT IRQ Channel configuration */
-  HAL_NVIC_SetPriority(AUDIO_IN_INT_IRQ, AUDIO_IN_IRQ_PREPRIO, 0);
-  HAL_NVIC_EnableIRQ(AUDIO_IN_INT_IRQ);
+  // aucun sens PH15 n'est pas relie au codec
+  // HAL_NVIC_SetPriority(AUDIO_IN_INT_IRQ, AUDIO_IN_IRQ_PREPRIO, 0);
+  // HAL_NVIC_EnableIRQ(AUDIO_IN_INT_IRQ);
 }
 
 /**

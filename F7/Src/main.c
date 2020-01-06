@@ -107,10 +107,38 @@ int flash_errs = 0;
 
 // ----------------------  Interrupts ----------------------
 
+// N.B. cette interrupt est disablee par jlcd_interrupt_on()
+// son role est joue par l'interrupt LTDC (16.8 ms)
 void SysTick_Handler(void)
 {
   HAL_IncTick();
 }
+
+#ifdef USE_LOGFIFO
+// N.B. pour avoir la correspondance numero <--> perif , voir IRQn_Type
+void report_interrupts(void)
+{
+unsigned int i, p;
+p = __NVIC_GetPriorityGrouping();
+LOGprint("priority grouping %d", p );
+// special systick
+i = -1;
+if	(  SysTick->CTRL & SysTick_CTRL_TICKINT_Msk )
+	{
+	p = __NVIC_GetPriority(i);
+	LOGprint("int #%2d, pri %d", i, p );
+	}
+// tous les autres
+for	( i = 0; i <=  97; ++i )
+	{
+	if	( __NVIC_GetEnableIRQ(i) )
+		{
+		p = __NVIC_GetPriority(i);
+		LOGprint("int #%2d, pri %d", i, p );
+		}
+	}
+}
+#endif
 
 // ---------------------- application ----------------------
 
@@ -455,8 +483,15 @@ switch	(c)
 			LOGprint("mic vol. %d", get_mic_volume() ); break;
 	case 'x' :	set_mic_volume( get_mic_volume() - 1 );
 			LOGprint("mic vol. %d", get_mic_volume() ); break;
+	default : unused = 1;
 	}
 #endif
+switch	(c)
+	{
+	case 'R' :	report_interrupts();
+		break;
+	default : unused = 1;
+	}
 if	( unused )
 	LOGprint("cmd '%c'", c );
 }
@@ -514,7 +549,7 @@ GPIO_config_profiler_PI1_PI2();
 BSP_TS_Init( LCD_DX, LCD_DY );
 
 // BSP_LED_Init(LED1);
-BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );   
+// BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );
 
 #ifdef USE_UART1
 CDC_init();
@@ -536,15 +571,15 @@ logfifo_init();
 
 #ifdef USE_AUDIO
 int retval;
-if	( BSP_PB_GetState(BUTTON_TAMPER) )
-	{
-	retval = audio_demo_init( 1 );
-	LOGprint("AUDIO init (mic) %d", retval );
-	}
-else	{
+//if	( BSP_PB_GetState(BUTTON_TAMPER) )
+//	{
+//	retval = audio_demo_init( 1 );
+//	LOGprint("AUDIO init (mic) %d", retval );
+//	}
+//else	{
 	retval = audio_demo_init( 0 );
 	LOGprint("AUDIO init (line) %d", retval );
-	}
+//	}
 audio_start();
 LOGprint("AUDIO start %d Hz", FSAMP );
 LOGprint("%d DMA per sec.", DMA_PER_SEC );
