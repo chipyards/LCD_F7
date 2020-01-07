@@ -1,8 +1,8 @@
 #include "options.h"
 #ifdef USE_SDCARD
 #include "jrtc.h"
-#include "ff_gen_drv.h"
-#include "sd_diskio.h"
+#include "ff.h"
+#include "jsd_diskio.h"
 #include "sdcard.h"
 
 // static data
@@ -38,12 +38,9 @@ do	{
 	} while (--len);
 }
 
-// link and mount
-int SDCard_init(void)
+// mount
+int SDCard_mount(void)
 {
-// linker le driver (connection soft, n'aborde pas le HW)
-if	( FATFS_LinkDriver(&SD_Driver, SDPath) )
-	return -1;
 // monter le FS
 if	( f_mount( &SDFatFs, (TCHAR const*)SDPath, 0) )
 	return -2;

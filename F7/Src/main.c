@@ -31,6 +31,7 @@
 #endif
 #ifdef USE_SDCARD
 #include "sdcard.h"
+#include "diskio.h"	// pour appeler direct des fonctions de jsd_diskio.c
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -431,9 +432,20 @@ char testbuf[64];
 unused = 0;
 switch	( c )
 	{
-	case 'm' :	// linker le driver etvmonter le FS
-		retval = SDCard_init();
-		LOGprint("SDCard_init : %d", retval );
+	case 'm' :
+		// initialiser le hardware (perif + carte) si ce n'est pas deja fait
+		retval = disk_initialize( 0 );
+		// en deduire quelques params
+		unsigned int val = 666;
+		retval = disk_ioctl( 0, GET_SECTOR_SIZE, &val );
+		LOGprint("Sector Size : %d", val );
+		retval = disk_ioctl( 0, GET_BLOCK_SIZE, &val );
+		LOGprint("Sector per block : %d", val );
+		retval = disk_ioctl( 0, GET_SECTOR_COUNT, &val );
+		LOGprint("Total Sectors : %d", val );
+		// monter le FS
+		retval = SDCard_mount();
+		LOGprint("SDCard_mount : %d", retval );
 	break;
 	case 'r' :	// simple read test
 		retval = SDCard_read_test( "DEMO.TXT", testbuf, sizeof(testbuf) );
@@ -442,11 +454,11 @@ switch	( c )
 			LOGprint(testbuf);
 	break;
 	case 'w' :	// simple write test
-		retval = SDCard_write_test( "WEMO.TXT", "More Love", 9 );
+		retval = SDCard_write_test( "DEMO.TXT", "More Love", 9 );
 		LOGprint("SDCard_write_test : %d", retval );
 	break;
 	case 'a' :	// ouvrir fichier en append
-		retval = SDCard_append_test( "WEMO.TXT", " Peace", 6 );
+		retval = SDCard_append_test( "DEMO.TXT", " Peace", 6 );
 		LOGprint("SDCard_append_test : %d", retval );
 	break;
 	case '1' :	// creer un fichier de test

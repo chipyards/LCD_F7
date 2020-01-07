@@ -13,8 +13,8 @@
 // #define USE_DEMO		// demo des fonts
 #define USE_TIME_DATE		// affichage de l'heure
 // #define USE_PARAM		// demo de page de parametres ajustables
-#define USE_AUDIO
-// #define USE_SDCARD		// support SD-Card (FAT32 FS)
+// #define USE_AUDIO
+#define USE_SDCARD		// support SD-Card (FAT32 FS)
 // #define USE_UART6	// CN4.D1 = PC6 = UART6 TX, CN4.D0 = PC7 = UART6 RX
 
 // lateralite

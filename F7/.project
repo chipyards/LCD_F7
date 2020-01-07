@@ -31,11 +31,6 @@
 			<location>C:/STM32/CubeF7/Drivers/BSP/Components/ft5336/ft5336.c</location>
 		</link>
 		<link>
-			<name>Drivers/BSP/stm32746g_discovery_sd.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_sd.c</location>
-		</link>
-		<link>
 			<name>Drivers/BSP/stm32746g_discovery_sdram.c</name>
 			<type>1</type>
 			<location>C:/STM32/CubeF7/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_sdram.c</location>
@@ -171,19 +166,9 @@
 			<location>C:/STM32/CubeF7/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.c</location>
 		</link>
 		<link>
-			<name>Middlewares/FatFs/Core/diskio.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/diskio.c</location>
-		</link>
-		<link>
 			<name>Middlewares/FatFs/Core/ff.c</name>
 			<type>1</type>
 			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/ff.c</location>
-		</link>
-		<link>
-			<name>Middlewares/FatFs/Core/ff_gen_drv.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c</location>
 		</link>
 		<link>
 			<name>Middlewares/FatFs/Option/syscall.c</name>
