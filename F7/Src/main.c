@@ -432,6 +432,10 @@ char testbuf[64];
 unused = 0;
 switch	( c )
 	{
+	case 'c' :	// presence carte
+		retval = GPIO_SDCARD_present();
+		LOGprint("SDCard %s", (retval?"inserted":"missing") );
+	break;
 	case 'm' :
 		// initialiser le hardware (perif + carte) si ce n'est pas deja fait
 		retval = disk_initialize( 0 );
@@ -501,6 +505,9 @@ switch	(c)
 switch	(c)
 	{
 	case 'R' :	report_interrupts();
+		break;
+	case 'b' :	retval = GPIO_bouton_bleu();
+		LOGprint("bouton bleu %d", retval );
 		break;
 	default : unused = 1;
 	}

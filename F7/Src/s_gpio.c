@@ -5,6 +5,25 @@
 #include "stm32f7xx_ll_gpio.h"
 #include "s_gpio.h"
 
+void GPIO_config_bouton(void)	// PI11
+{
+LL_GPIO_InitTypeDef gpio_initstruct;
+// port I (aussi utilise pour LED verte)
+LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOI);
+gpio_initstruct.Mode       = LL_GPIO_MODE_INPUT;
+gpio_initstruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+gpio_initstruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+gpio_initstruct.Pull       = LL_GPIO_PULL_NO;		// pulldown discret
+gpio_initstruct.Pin        = LL_GPIO_PIN_11;
+LL_GPIO_Init(GPIOI, &gpio_initstruct);
+}
+
+int GPIO_bouton_bleu(void)	// Act Hi
+{
+return LL_GPIO_IsInputPinSet( GPIOI, LL_GPIO_PIN_11 );
+}
+
+
 #ifdef USE_UART1
 void GPIO_config_uart1(void)
 {
@@ -82,5 +101,40 @@ void profile_D8( int val )
 if	( val )
 	LL_GPIO_SetOutputPin( GPIOI, LL_GPIO_PIN_2 );
 else	LL_GPIO_ResetOutputPin( GPIOI, LL_GPIO_PIN_2 );
+}
+#endif
+
+#ifdef USE_SDCARD
+void GPIO_config_SDCard( void )
+{
+LL_GPIO_InitTypeDef gpio_initstruct;
+// ports C et D
+LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOD);
+// params communs
+gpio_initstruct.Mode       = LL_GPIO_MODE_ALTERNATE;
+gpio_initstruct.Speed      = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+gpio_initstruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+gpio_initstruct.Pull       = LL_GPIO_PULL_UP;
+gpio_initstruct.Alternate  = LL_GPIO_AF_12;
+// port C
+gpio_initstruct.Pin        = LL_GPIO_PIN_8 | LL_GPIO_PIN_9 | LL_GPIO_PIN_10 | LL_GPIO_PIN_11 | LL_GPIO_PIN_12;
+LL_GPIO_Init(GPIOC, &gpio_initstruct);
+// port D
+gpio_initstruct.Pin        = LL_GPIO_PIN_2;
+LL_GPIO_Init(GPIOD, &gpio_initstruct);
+// card detect
+// PC13
+gpio_initstruct.Mode       = LL_GPIO_MODE_INPUT;
+gpio_initstruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+gpio_initstruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+gpio_initstruct.Pull       = LL_GPIO_PULL_UP;	// ! pas de pullup discret!
+gpio_initstruct.Pin        = LL_GPIO_PIN_13;
+LL_GPIO_Init(GPIOC, &gpio_initstruct);
+}
+
+int GPIO_SDCARD_present(void)
+{
+return (!LL_GPIO_IsInputPinSet( GPIOC, LL_GPIO_PIN_13 ));
 }
 #endif
