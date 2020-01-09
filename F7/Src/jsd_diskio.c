@@ -17,20 +17,29 @@ SD_HandleTypeDef uSdHandle;
 /* global permanent Disk status pour FatFs */
 volatile DSTATUS zestatus = STA_NOINIT;
 
+//#define USE_SD_INTERRUPT
 
 #ifdef USE_SD_INTERRUPT
+/*
+HAL_SD_IRQHandler() : Interrupt routine associee qui 
+	1) appelle en fonction des flags :
+	   SDMMC_CmdStopTransfer
+		CMD12 'STOP'
+	   SD_Read_IT
+		lire 8 mots de 32 bits dans le fifo (qui en contient 32)
+		incrementer l'adresse pRxBuffPtr dans la handle
+	   SD_Write_IT
+		ecrire 8 mots de 32 bits dans le fifo (qui en contient 32)
+		incrementer l'adresse pTxBuffPtr dans la handle
+	2) collecter les erreurs eventuelles dans hsd->ErrorCode
+Cette fonction doit etre appelee par le "vrai" handler SDMMC1_IRQHandler
+Note : cette fonction est tres encombree par le traitement DMA
+*/
 volatile unsigned int SD_IRQ_cnt = 0;
-
-void BSP_SDMMC_IRQHandler(void)
+void SDMMC1_IRQHandler(void)
 {
 HAL_SD_IRQHandler(&uSdHandle);
 SD_IRQ_cnt++;
-}
-
-void jSD_interrupt_init(void)
-{
-HAL_NVIC_SetPriority(SDMMC1_IRQn, 0x0E, 0);
-HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
 }
 #endif
 
@@ -134,6 +143,11 @@ if	( HAL_SD_InitCard(&uSdHandle) )
 if	( HAL_SD_ConfigWideBusOperation( &uSdHandle, SDMMC_BUS_WIDE_4B ) != HAL_OK )
 	{ zestatus |= STA_NOINIT; return zestatus; }	// status style FatFs
 
+#ifdef USE_SD_INTERRUPT
+HAL_NVIC_SetPriority(SDMMC1_IRQn, 4, 0);
+HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
+#endif
+
 zestatus = jSD_CheckStatus();
 
 // Note : pour le moment le registre SSR n'est pas lu, mais la fonctions SD_SendSDStatus()
@@ -147,39 +161,122 @@ DSTATUS disk_status( BYTE pdrv )
 return zestatus;
 }
 
+/*
+HAL_SD_ReadBlocks
+	1) appel SDMMC_CmdBlockLength() CMD16 (superflu pour SDHC)
+	2) preparer une struct type SDMMC_DataInitTypeDefde 5 params pour la DPSM (Data Path State Machine)
+	   l'appliquer avec SDMMC_ConfigData() qui injecte :
+		- DataTimeOut dans registre DTIMER		en card bus clock periods, max 172s
+		- DataLength dans DLEN				en bytes
+		- DataBlockSize, TransferMode dans DCTRL	fixes pour SDHC
+		- TransferDir dans DCTRL			read ou write
+		- transfer enable dans DCTRL
+	3) appeler SDMMC_CmdReadMultiBlock() ou SDMMC_CmdReadSingleBlock()
+	   --> CMD18 ou CMD17 en passant le num. de block de depart sur la carte
+	4) repeter :
+		a) tester les flags RXOVERR | DCRCFAIL | DTIMEOUT | DATAEND du registre STA,
+		   eventuellement sortir de la boucle
+		b) si RXFIFOHF lire 8 mots de 32 bits dans le fifo (qui en contient 32)
+		   Note : "Receive FIFO half full: there are at least 8 words in the FIFO"
+	5) envoyer CMD12 'STOP' si on etait en multibloc
+	6) collecter les erreurs eventuelles dans hsd->ErrorCode
+	7) recuperer les data dans le fifo s'il en reste
+OBJECTION #1 : aucun controle de quantite, i.e. si on loupe le flag DATAEND on peut deborder
+la zone RAM destination !!! Par ailleurs si la carte tarde a reagir au stop, on peut supposer que le perif
+va ignorer les data (ne pas les mettre dans le fifo - c'est l'hypothese optimiste
+OBJECTION #2 : cette fonction gere un timeout soft en parallele avec le hard, en unites systick, soit
+25000 fois plus long que celui du perif... 1200h sert a rien
+
+HAL_SD_ReadBlocks_IT
+	1) mettre adresse RAM et nombre de bytes dans la handle pour un acces global 
+	2) enabler les interrupts DCRCFAIL | DTIMEOUT | RXOVERR | DATAEND | RXFIFOHF
+	3) preparer une struct type SDMMC_DataInitTypeDefde 5 params pour la DPSM (Data Path State Machine)
+	   l'appliquer avec SDMMC_ConfigData() (idem mode polling)
+	4) appeler SDMMC_CmdBlockLength() CMD16 (superflu pour SDHC)
+	5) appeler SDMMC_CmdReadMultiBlock() ou SDMMC_CmdReadSingleBlock()
+	   --> CMD18 ou CMD17 en passant le num. de block de depart sur la carte
+*/
 DRESULT disk_read( BYTE pdrv, BYTE* buff, DWORD sector, UINT count )
 {
-DRESULT res = RES_ERROR;
 if	( zestatus & STA_NOINIT )
 	return RES_NOTRDY;
-if	( HAL_SD_ReadBlocks( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, count, SD_TIMEOUT ) == HAL_OK )
-//if	(             BSP_SD_ReadBlocks( (uint32_t*)buff, (uint32_t)sector, count, SD_TIMEOUT ) == MSD_OK )
-	{
-	/* wait until the read operation is finished */
-	// CMD13 --> CSR --> 4 bits de state, 'tran' = repos, 'rcv' = receiving (write), 'data' = transmitting (read)
-	while	( HAL_SD_GetCardState(&uSdHandle) != HAL_SD_CARD_TRANSFER )
-//	while	( BSP_SD_GetCardState()!= MSD_OK )
-		{}
-	res = RES_OK;
-	}
-return res;
+#ifdef USE_SD_INTERRUPT
+if	( HAL_SD_ReadBlocks_IT( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, count ) != HAL_OK )
+	return RES_ERROR;
+// ici on ne cherche pas a profiter du temps libre mais seulement valider le mode interrupt, alors on attend
+while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL_SD_STATE_READY (meme en cas d'erreur !?)
+	{}
+if	( uSdHandle.ErrorCode != 0 )
+	return RES_ERROR;
+#else
+if	( HAL_SD_ReadBlocks( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, count, SD_TIMEOUT ) != HAL_OK )
+//if	( BSP_SD_ReadBlocks(             (uint32_t*)buff, (uint32_t)sector, count, SD_TIMEOUT ) != MSD_OK )
+	return RES_ERROR;
+#endif
+/* wait until the operation is finished */
+// CMD13 --> CSR --> 4 bits de state, 'tran' = repos, 'rcv' = receiving (write), 'data' = transmitting (read)
+while	( HAL_SD_GetCardState(&uSdHandle) != HAL_SD_CARD_TRANSFER )
+//while	( BSP_SD_GetCardState()!= MSD_OK )
+	{}
+return RES_OK;
 }
 
+/*
+HAL_SD_WriteBlocks
+	1) appel SDMMC_CmdBlockLength() CMD16 (superflu pour SDHC)
+	2) appeler SDMMC_CmdWriteMultiBlock() ou SDMMC_CmdWriteSingleBlock()
+	   --> CMD25 ou CMD24 en passant le num. de block de depart sur la carte
+	3) preparer une struct type SDMMC_DataInitTypeDefde 5 params pour la DPSM (Data Path State Machine)
+	   l'appliquer avec SDMMC_ConfigData() (voir ci-dessus)
+	4) repeter :
+		a) tester les flags TXUNDERR | DCRCFAIL | DTIMEOUT | DATAEND du registre STA,
+		   eventuellement sortir de la boucle
+		b) si TXFIFOHE ecrire 8 mots de 32 bits dans le fifo (qui en contient 32)
+		   Note : "Transmit FIFO half empty: at least 8 words can be written into the FIFO"
+	5) envoyer CMD12 'STOP' si on etait en multibloc
+	6) collecter les erreurs eventuelles dans hsd->ErrorCode
+OBJECTION #1 : a quoi sert le flag DCRCFAIL en ecriture ?
+OBJECTION #2 : cf read ci-dessus
+
+Chaque tour de boucle ecluse 8*4 = 32 bytes, @ 10MB/s on a 10/32MHz soit 312 kHz de frequence boucle,
+les retards sont cumulatifs car a chaque tour on traite 8 mots meme si on pourrait faire plus
+==> vulnerabilite a toute interrupt > 3.2 us
+Solutions :
+- Hardware flow control
+- reduire horloge pour brider la carte au debit souhaite
+- interrupt
+
+HAL_SD_WriteBlocks_IT
+	1) mettre adresse RAM et nombre de bytes dans la handle pour un acces global 
+	2) enabler les interrupts DCRCFAIL | DTIMEOUT | TXUNDERR | DATAEND | TXFIFOHE
+	3) appeler SDMMC_CmdBlockLength() CMD16 (superflu pour SDHC)
+	4) appeler SDMMC_CmdWriteMultiBlock() ou SDMMC_CmdWriteSingleBlock()
+	   --> CMD25 ou CMD24 en passant le num. de block de depart sur la carte
+	5) preparer une struct type SDMMC_DataInitTypeDefde 5 params pour la DPSM (Data Path State Machine)
+	   l'appliquer avec SDMMC_ConfigData() (idem mode polling)
+*/
 DRESULT disk_write( BYTE pdrv, const BYTE* buff, DWORD sector, UINT count )
 {
-DRESULT res = RES_ERROR;
 if	( zestatus & STA_NOINIT )
 	return RES_NOTRDY;
-if	( HAL_SD_WriteBlocks(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), count, SD_TIMEOUT) == HAL_OK)
-//if	( BSP_SD_WriteBlocks(            (uint32_t*)buff,(uint32_t)(sector), count, SD_TIMEOUT) == MSD_OK )
-	{
-	/* wait until the Write operation is finished */
-	while	( HAL_SD_GetCardState(&uSdHandle) != HAL_SD_CARD_TRANSFER )
-//	while	( BSP_SD_GetCardState() != MSD_OK )
-		{}
-	res = RES_OK;
-	}
-return res;
+#ifdef USE_SD_INTERRUPT
+if	( HAL_SD_WriteBlocks_IT(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), count ) != HAL_OK )
+	return RES_ERROR;
+// ici on ne cherche pas a profiter du temps libre mais seulement valider le mode interrupt, alors on attend
+while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL_SD_STATE_READY (meme en cas d'erreur !?)
+	{}
+if	( uSdHandle.ErrorCode != 0 )
+	return RES_ERROR;
+#else
+if	( HAL_SD_WriteBlocks(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), count, SD_TIMEOUT) != HAL_OK)
+//if	( BSP_SD_WriteBlocks(            (uint32_t*)buff,(uint32_t)(sector), count, SD_TIMEOUT) != MSD_OK )
+	return RES_ERROR;
+#endif
+/* wait until the operation is finished */
+while	( HAL_SD_GetCardState(&uSdHandle) != HAL_SD_CARD_TRANSFER )
+//while	( BSP_SD_GetCardState() != MSD_OK )
+	{}
+return RES_OK;
 }
 
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff )
@@ -229,7 +326,7 @@ switch	( cmd )
 return res;
 }
 
-/* 332-bit timestamp, from MSB :
+/* FAT 32-bit timestamp, from MSB :
 	7 bits : Year from 1980 (0..127)
 	4 bits : Month (1..12)
 	5 bits : Day of the month(1..31)
