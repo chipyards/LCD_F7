@@ -33,9 +33,10 @@ for ( n = 0; n < 256; n++ )
 // finir avec :		crc ^= 0xffffffff;
 static void icrc32( const unsigned char *buf, int len, unsigned int * crc )
 {
-do	{
+while	( len-- )
+	{
 	*crc = crc_table[((*crc) ^ (*buf++)) & 0xff] ^ ((*crc) >> 8);
-	} while (--len);
+	};
 }
 
 // mount
@@ -98,7 +99,7 @@ if	( byteswritten != size )
 return byteswritten;
 }
 
-// random file with CRC - size is in bytes
+// create random file with CRC - size is in bytes
 // rend la duree en s, ou <0 si erreur
 #define QBUF 32768
 int SDCard_random_write_test( unsigned int size, const char * path, unsigned int * crc )
@@ -125,6 +126,39 @@ while	( size )
 		return -2;
 	if	( wcnt != cnt )
 		return -3;
+	}
+*crc ^= 0xffffffff;
+// fermer
+f_close(&MyFile);
+jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
+tstop -= tstart;
+if	( tstop < 0 )
+	tstop += 3600;
+return tstop;
+}
+
+// read random file with CRC - cnt is in bytes
+// rend la duree en s, ou <0 si erreur
+#define QBUF 32768
+int SDCard_random_read_test( const char * path, unsigned int * crc, unsigned int * cnt )
+{
+FIL MyFile;
+unsigned char rbuf[QBUF];
+unsigned int tstart, tstop;
+unsigned int rcnt;
+make_crc_table();
+*crc = 0xffffffff; *cnt = 0;
+jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
+if	( f_open( &MyFile, path, FA_READ ) )
+	return -1;
+while	(1)
+	{
+	if	( f_read( &MyFile, rbuf, QBUF, &rcnt ) )
+		break;
+	*cnt += rcnt;
+	icrc32( rbuf, rcnt, crc );
+	if	( rcnt != QBUF )
+		break;
 	}
 *crc ^= 0xffffffff;
 // fermer

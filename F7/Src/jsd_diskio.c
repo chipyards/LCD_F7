@@ -17,7 +17,7 @@ SD_HandleTypeDef uSdHandle;
 /* global permanent Disk status pour FatFs */
 volatile DSTATUS zestatus = STA_NOINIT;
 
-//#define USE_SD_INTERRUPT
+#define USE_SD_INTERRUPT
 
 #ifdef USE_SD_INTERRUPT
 /*
