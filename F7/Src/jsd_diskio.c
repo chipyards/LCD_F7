@@ -35,11 +35,13 @@ HAL_SD_IRQHandler() : Interrupt routine associee qui
 Cette fonction doit etre appelee par le "vrai" handler SDMMC1_IRQHandler
 Note : cette fonction est tres encombree par le traitement DMA
 */
-volatile unsigned int SD_IRQ_cnt = 0;
+// volatile unsigned int SD_IRQ_cnt = 0;
 void SDMMC1_IRQHandler(void)
 {
+profile_D8(1);
 HAL_SD_IRQHandler(&uSdHandle);
-SD_IRQ_cnt++;
+profile_D8(0);
+// SD_IRQ_cnt++;
 }
 #endif
 
@@ -88,11 +90,13 @@ uSdHandle.Instance = SDMMC1;
 // 	1) pour la phase d'initialisation (bus 1 bit, 400 kHz max)
 //	2) pour changer de frequence d'horloge (bus 1 bit, 25 MHz max)
 //	3) pour passer en bus 4 bits
+// les data ci-dessous sont utilisees pour le 2), et pour le 3 mais sous forme de
+// copie avec BusWide = SDMMC_BUS_WIDE_4B
 uSdHandle.Init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
 uSdHandle.Init.ClockBypass         = SDMMC_CLOCK_BYPASS_DISABLE;
 uSdHandle.Init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
 uSdHandle.Init.BusWide             = SDMMC_BUS_WIDE_1B;
-uSdHandle.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+uSdHandle.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_ENABLE;
 uSdHandle.Init.ClockDiv            = SDMMC_TRANSFER_CLK_DIV;
 
 // BEGIN mise a plat de HAL_SD_Init pour eviter :

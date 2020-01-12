@@ -36,5 +36,5 @@
 // sans ces options les fonts sont supposees presentes @ FLASH_FONTS_BASE
 
 /** modules utilitaires **/
-// #define PROFILER_PI2	// pins PI1 aka D13, PI2 aka D8
+#define PROFILER_PI2	// pins PI1 aka D13, PI2 aka D8
 

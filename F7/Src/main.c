@@ -588,8 +588,7 @@ GPIO_config_profiler_PI1_PI2();
 #endif
 BSP_TS_Init( LCD_DX, LCD_DY );
 
-// BSP_LED_Init(LED1);
-// BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );
+GPIO_config_bouton();
 
 #ifdef USE_UART1
 CDC_init();
@@ -611,15 +610,15 @@ logfifo_init();
 
 #ifdef USE_AUDIO
 int retval;
-//if	( BSP_PB_GetState(BUTTON_TAMPER) )
-//	{
-//	retval = audio_demo_init( 1 );
-//	LOGprint("AUDIO init (mic) %d", retval );
-//	}
-//else	{
+if	( GPIO_bouton_bleu() )
+	{
+	retval = audio_demo_init( 1 );
+	LOGprint("AUDIO init (mic) %d", retval );
+	}
+else	{
 	retval = audio_demo_init( 0 );
 	LOGprint("AUDIO init (line) %d", retval );
-//	}
+	}
 audio_start();
 LOGprint("AUDIO start %d Hz", FSAMP );
 LOGprint("%d DMA per sec.", DMA_PER_SEC );
