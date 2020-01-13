@@ -15,7 +15,7 @@
   *            PLL_M                          = 25
   *            PLL_N                          = 400
   *            PLL_P                          = 2
-  *            PLL_Q                          = 8
+  *            PLL_Q                          =
   *            VDD(V)                         = 3.3
   *            Main regulator output voltage  = Scale1 mode
   *            Flash Latency(WS)              = 6
@@ -36,7 +36,9 @@ void SystemClock200_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 25;
   RCC_OscInitStruct.PLL.PLLN = 400;  
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 9;	// 44.44 MHz pour SDcard (!! incompatible USB)
+  // RCC_OscInitStruct.PLL.PLLQ = 8;	// 50 MHz pour SDcard (c'est limite)
+  // RCC_OscInitStruct.PLL.PLLQ = 9;	// 44.44 MHz pour SDcard (!! incompatible USB)
+  RCC_OscInitStruct.PLL.PLLQ = 15;	// diviseur max, 26.66 MHz pour SDcard
 
   ret = HAL_RCC_OscConfig(&RCC_OscInitStruct);
   if(ret != HAL_OK)

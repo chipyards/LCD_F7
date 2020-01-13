@@ -465,39 +465,39 @@ switch	( c )
 		retval = SDCard_append_test( "DEMO.TXT", " Peace", 6 );
 		LOGprint("SDCard_append_test : %d", retval );
 	break;
-	case '1' :	// creer un fichier de test
-	case '2' :	case '3' :	case '4' :	case '5' :
+	// case '1' :	case '2' :
+	case '3' :	case '4' :	case '5' :
 	case '6' :	case '7' :	case '8' :	case '9' :
-		{
+		{	// creer un fichier de test
 		int retval;
-		unsigned int crc, size;
-		char fnam[32];
+		unsigned int crc, size, startsec, qsec;
 		size = c - '0';
-		size = 1 << size;
-		snprintf( fnam, sizeof(fnam), "test%dM.bin", size );
-		size *= 1000000;
-		retval = SDCard_random_write_test( size, fnam, &crc );
+		size = 1 << size;		// 2..512
+		qsec = size * (1<<(20-9));	// 1 MiB en secteurs
+		startsec = qsec;		// on laisse la place pour les plus petits...
+		LOGprint("try write %u sec @ %u ", qsec, startsec );
+		retval = SDCard_random_write_raw( startsec, qsec, &crc );
 		if	( retval < 0 )
-			LOGprint("Failed : write %s : code %d", fnam, retval );
-		else	LOGprint("Ok : write %s in %d s, crc %08X", fnam, retval, crc );
+			LOGprint("Failed : write : code %d", retval );
+		else	LOGprint("Ok : write in %d s, crc %08X", retval, crc );
 		}
 	break;
-	case 'A' :	// verifier un fichier de test
-	case 'B' :	case 'C' :	case 'D' :	case 'E' :
+	// case 'A' :	case 'B' :
+	case 'C' :	case 'D' :	case 'E' :
 	case 'F' :	case 'G' :	case 'H' :	case 'I' :
-		{
+		{	// verifier un fichier de test
 		int retval;
-		unsigned int crc, size, cnt=0;
-		char fnam[32];
-		size = c - 'A';
-		size = 1 << size;
-		snprintf( fnam, sizeof(fnam), "test%dM.bin", size );
-		retval = SDCard_random_read_test( fnam, &crc, &cnt );
+		unsigned int crc, size, startsec, qsec;
+		size = 1 + c - 'A';
+		size = 1 << size;		// 2..512
+		qsec = size * (1<<(20-9));	// 1 MiB en secteurs
+		startsec = qsec;
+		LOGprint("try read %u sec @ %u ", qsec, startsec );
+		retval = SDCard_random_read_raw( startsec, qsec, &crc );
 		if	( retval < 0 )
-			LOGprint("Failed : read %s : code %d", fnam, retval );
+			LOGprint("Failed : read : code %d", retval );
 		else	{
-			LOGprint("Ok : read %s in %d s, crc %08X", fnam, retval, crc );
-			LOGprint("     %u bytes", cnt );
+			LOGprint("Ok : read in %d s, crc %08X", retval, crc );
 			}
 		}
 	break;

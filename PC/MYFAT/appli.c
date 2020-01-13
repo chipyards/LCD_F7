@@ -39,7 +39,23 @@ printf("opening %s\n", devicename );
 
 retval =  myfat_start_session( devicename );
 if	( retval )
-	{ printf("pas vu de FAT pour le moment, err %d\n", retval ); return(1); }
+	{
+	printf("pas vu de FAT pour le moment, err %d\n", retval );
+	if	( argc == 4 )
+		{		// copier un paquet de secteurs bruts
+		myfat->SectorsPerCluster = 64;
+		myfat->bps = 512;
+		myfat->TotalSectors = 30302208;
+		myfat->FirstDataSector = 0;
+		unsigned int startsec, qsec;
+		startsec = atoi(argv[2]);
+		qsec = atoi(argv[3]);
+		retval = myfat_save_raw( startsec, qsec, "rawNF.bin" );
+		if	( retval )
+			{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
+		}
+	return 0;
+	}
 
 // alloc et lecture FAT entiere en RAM, retour 0 si Ok
 retval = myfat_read_fat();	// appeler apres succes DumpBootSector()

@@ -670,8 +670,8 @@ return(0);
 // lecture et copie d'un paquet de secteurs bruts (par clusters entiers)
 int myfat_save_raw( unsigned int startsec, unsigned int qsec, const char * local_path )
 {
-if	( startsec < myfat->FirstDataSector )
-	return -2;
+//if	( startsec < myfat->FirstDataSector )
+//	return -2;
 unsigned int endsec = startsec + qsec;
 if	( endsec >= myfat->TotalSectors )
 	return -3;

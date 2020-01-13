@@ -4,3 +4,6 @@ int SDCard_write_test( const char *fnam, char * tbuf, unsigned int size );
 int SDCard_append_test( const char *fnam, char * tbuf, unsigned int size );
 int SDCard_random_write_test( unsigned int size, const char * path, unsigned int * crc );
 int SDCard_random_read_test( const char * path, unsigned int * crc, unsigned int * cnt );
+int SDCard_random_write_raw( unsigned int startsec, unsigned int qsec, unsigned int * crc );
+int SDCard_random_read_raw( unsigned int startsec, unsigned int qsec, unsigned int * crc );
+

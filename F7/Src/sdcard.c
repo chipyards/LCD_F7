@@ -2,7 +2,7 @@
 #ifdef USE_SDCARD
 #include "jrtc.h"
 #include "ff.h"
-#include "jsd_diskio.h"
+#include "diskio.h"
 #include "sdcard.h"
 
 // static data
@@ -28,7 +28,7 @@ for ( n = 0; n < 256; n++ )
     }
 }
 
-// cumuler le calcul du CRC
+// cumuler le calcul du CRC sur des bytes
 // initialiser avec :	crc = 0xffffffff;
 // finir avec :		crc ^= 0xffffffff;
 static void icrc32( const unsigned char *buf, int len, unsigned int * crc )
@@ -163,6 +163,68 @@ while	(1)
 *crc ^= 0xffffffff;
 // fermer
 f_close(&MyFile);
+jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
+tstop -= tstart;
+if	( tstop < 0 )
+	tstop += 3600;
+return tstop;
+}
+
+// create random raw block with CRC
+// rend la duree en s, ou <0 si erreur
+#define QSPB 64
+int SDCard_random_write_raw( unsigned int startsec, unsigned int qsec, unsigned int * crc )
+{
+unsigned char wbuf[QSPB*512];
+unsigned int tstart, tstop, isec, endsec, i;
+int retval;
+
+make_crc_table();
+*crc = 0xffffffff;
+jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
+endsec = startsec + qsec;
+
+for	( isec = startsec; isec < endsec; isec += QSPB )
+	{
+	for	( i = 0; i < QSPB*512; ++i )
+		wbuf[i] = rand();
+		// wbuf[i] = (isec >> 6);
+	icrc32( wbuf, QSPB*512, crc );
+	retval = disk_write( 0, wbuf, isec, QSPB );
+	if	( retval )
+		return -retval;
+	}
+*crc ^= 0xffffffff;
+
+jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
+tstop -= tstart;
+if	( tstop < 0 )
+	tstop += 3600;
+return tstop;
+}
+
+// verify random raw block with CRC
+// rend la duree en s, ou <0 si erreur
+int SDCard_random_read_raw( unsigned int startsec, unsigned int qsec, unsigned int * crc )
+{
+unsigned char rbuf[QSPB*512];
+unsigned int tstart, tstop, isec, endsec;
+int retval;
+
+make_crc_table();
+*crc = 0xffffffff;
+jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
+endsec = startsec + qsec;
+
+for	( isec = startsec; isec < endsec; isec += QSPB )
+	{
+	retval = disk_read( 0, rbuf, isec, QSPB );
+	if	( retval )
+		return -retval;
+	icrc32( rbuf, QSPB*512, crc );
+	}
+*crc ^= 0xffffffff;
+
 jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
 tstop -= tstart;
 if	( tstop < 0 )
