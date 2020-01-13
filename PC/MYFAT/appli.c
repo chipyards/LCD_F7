@@ -16,29 +16,6 @@
 #include "myfat.h"
 
 
-void ecrit( char *fnam, char *dbuf, int aecrire )
-{
-int desthand;
-desthand = open( fnam, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
-if ( desthand <= 0 ) { fprintf( stderr, "%s non ouvert \n", fnam); exit(1); }
-if ( write( desthand, dbuf, aecrire ) != aecrire )
-   { fprintf( stderr, "erreur ecriture disque\n"); close(desthand); exit(1); }
-close(desthand);
-}
-
-
-/*
-
-nclu = ScanChain( clu );
-printf("chain size %d clusters = %d bytes\n", nclu, 
-       nclu * bps * SectorsPerCluster );
-dbuf = CopyChain( clu, nclu );
-ecrit( "saved", dbuf, ( (DIRENT *)(dirbuf + 32 * i) ) -> size );
-return(0);
-}
-*/
-
-
 int main( int argc, char *argv[] )
 {
 int retval;
@@ -74,7 +51,15 @@ retval = myfat_read_root_dir();
 if	( retval )
 	{ printf("echec lecture root dir, err %d\n", retval ); return(1); }
 
-if	( argc >= 3 )
+unsigned int lastused, freecnt, badcnt, EOCcnt, dirtyzone;
+FAT32stat( &lastused, &freecnt, &badcnt, &EOCcnt );
+dirtyzone = (lastused-2)+1;	// nombre de clusters avant la zone vierge
+printf("last used cluster %u ->> next sector %u\n", lastused, myfat->FirstDataSector + dirtyzone * myfat->SectorsPerCluster );
+printf("free clusters %u out of %u dont %u enfermes\n", freecnt, myfat->DataClusters, freecnt - (myfat->DataClusters-dirtyzone) ); 
+printf("EOCs %u, bad clusters %u\n", EOCcnt, badcnt );
+fflush(stdout);
+
+if	( argc == 3 )
 	{		// tenter de copier un fichier present dans le root dir
 	unsigned int startcluster, size;
 	int i = FindFile( argv[2], myfat->rootbuf, myfat->RootDirSectors * (myfat->bps/32), &startcluster, &size );
@@ -85,6 +70,16 @@ if	( argc >= 3 )
 	if	( retval )
 		{ printf("echec copie \"%s\" sur disque local, err %d\n", argv[2], retval ); return(1); }
 	}
+else if	( argc == 4 )
+	{		// copier un paquet de secteurs bruts
+	unsigned int startsec, qsec;
+	startsec = atoi(argv[2]);
+	qsec = atoi(argv[3]);
+	retval = myfat_save_raw( startsec, qsec, "raw.bin" );
+	if	( retval )
+		{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
+	}
+	
 
 win32_disk_close();
 return(0);

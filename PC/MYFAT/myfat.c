@@ -14,7 +14,28 @@ typedef unsigned int DWORD;
 #include "diskio.h"
 
 /** declarations -------------------------------------------------------- */
-
+/* petite resume de survie : decoupage volume (non partitionne)
+   old = FAT12|FAT16, new = FAT32
+	secteurs reserves (boot sector en premier)
+	FAT1
+	FAT2
+	oldstyle rootdir (in FAT32 rootdir is a regular cluster chain)
+	data area
+   le decoupage en clusters commence seulement a la data area, dont le premier cluster est le cluster 2
+   il n'y a pas de clusters 0 et 1, ainsi les 2 entrees de la FAT sont reservees
+   chaque entree de la FAT est associee a un cluster par son index, et peut contenir :
+	0			: cluster libre
+	any valid cluster #	: next cluster
+	EOC			: end of chain
+	other			: maybe bad cluster
+   l'essentiel pour acceder aux data d'un fichier :
+	FirstFATSector		: pour entrer dans la FAT
+	son start cluster	: pour commencer la chaine
+	FirstDataSector		: pour convertir les numeros de cluster en numeros de secteurs
+				  N.B. cette valeur se calcule d'apres l'encombrement des zones qui precedent
+	formule magique : current_data_sector = FirstDataSector + (clu-2) * SectorsPerCluster
+	N.B. FirstDataSector n'est pas necessairement aligne sur un nombre entier de clusters, c'est ballot
+*/
 /* FAT 32 boot sector */
 #pragma pack (1)
 typedef struct{
@@ -24,28 +45,28 @@ typedef struct{
   unsigned char SectorsPerCluster;
   unsigned short ReservedSectors;
   unsigned char NumFATs;
-  unsigned short NumRoot;
-  unsigned short TotalSectors_16;
+  unsigned short NumRoot;		// number of entries in oldstyle root dir
+  unsigned short TotalSectors_16;	// old
   unsigned char MediaDB;
-  unsigned short SectorsPerFAT_16;
-  unsigned short SectorsPerTrack;
-  unsigned short NumHeads;
+  unsigned short SectorsPerFAT_16;	// old
+  unsigned short SectorsPerTrack;	// older
+  unsigned short NumHeads;		// older
   unsigned int NumHidSect;
-  unsigned int TotalSectors_32;
+  unsigned int TotalSectors_32;		// total for the volume
   /* start of specific FAT32 layout */
-  unsigned int SectorsPerFAT_32;
+  unsigned int SectorsPerFAT_32;	// new
   unsigned short Flags;
   unsigned short Version;
-  unsigned int RootStartCluster;
-  unsigned short FSInfoSec;
-  unsigned short BkUpBootSec;
+  unsigned int RootStartCluster;	// root dir chain start
+  unsigned short FSInfoSec;		// points inside reserved sectors area
+  unsigned short BkUpBootSec;		// points inside reserved sectors area
   unsigned char Reserved[12];
   unsigned char DrvNum;
   unsigned char Reserved1;
   unsigned char BootSig;
-  unsigned char VolID[4];
-  char VolLab[11];
-  char FileSysType[8];
+  unsigned char VolID[4];		// Volume serial number
+  char VolLab[11];			// old
+  char FileSysType[8];			// old
 } FAT32boot; /* size of struct should be 90 */
 
 /* The RootStartCluster is new to the boot record.
@@ -187,13 +208,13 @@ myfat->bps = b->bytesPerSector;
 printf("taille secteur %d\n", myfat->bps );
 if ( ( myfat->bps != 512 ) && ( myfat->bps != 1024 ) && ( myfat->bps != 2048 ) && ( myfat->bps != 4096 ) )
    { printf("taille secteur incompatible avec FAT...\n"); return(3); }
-printf("nom OS : %-.8s\n", b->OEM_Name );
+// printf("nom OS : %-.8s\n", b->OEM_Name );
 myfat->SectorsPerCluster = b->SectorsPerCluster;
 printf("secteurs par cluster %d (cluster de %d bytes)\n",
         myfat->SectorsPerCluster, b->bytesPerSector * myfat->SectorsPerCluster );
 printf("secteurs reserves %d\n", b->ReservedSectors );
 printf("nombre de FATs %d\n", b->NumFATs );
-printf("nombre d'entrees dans le root dir %d\n", b->NumRoot );
+// printf("nombre d'entrees dans le root dir %d\n", b->NumRoot );
 
 myfat->TotalSectors = b->TotalSectors_16;
 if ( myfat->TotalSectors == 0 )
@@ -204,9 +225,9 @@ printf("Media(F8 ou F0) 0x%02X\n", b->MediaDB );
 myfat->SectorsPerFAT = b->SectorsPerFAT_16;
 if ( myfat->SectorsPerFAT == 0 )
    myfat->SectorsPerFAT = b->SectorsPerFAT_32;
-printf("nombre de secteurs par FAT %d\n", myfat->SectorsPerFAT );
+// printf("nombre de secteurs par FAT %d\n", myfat->SectorsPerFAT );
 // printf("nombre de secteurs par piste %d, de tetes %d\n", b->SectorsPerTrack, b->NumHeads );
-printf("nombre de secteurs caches %d\n", b->NumHidSect );
+// printf("nombre de secteurs caches %d\n", b->NumHidSect );
 if ( b->NumFATs == 0 )
    { printf("Ce n'est probablement pas un systeme FAT...\n"); return(4); }
 /* determinons quel type de FAT on a : (methode OFFICIELLE !) */
@@ -222,6 +243,11 @@ myfat->FirstFATSector += myfat->FATpartBase;
 myfat->FirstDirSector += myfat->FATpartBase;
 myfat->FirstDataSector += myfat->FATpartBase;
 
+printf("FirstFATSector %u\n", myfat->FirstFATSector );
+printf("FirstDirSector %u\n", myfat->FirstDirSector );
+printf("FirstDataSector %u\n", myfat->FirstDataSector );
+printf("DataSectors %u ->> env. %u Mbytes\n", myfat->DataSectors, myfat->DataSectors/2048 );
+
 myfat->DataClusters = myfat->DataSectors / b->SectorsPerCluster; 
 if   ( myfat->DataClusters < 4085 )
      myfat->FAT = 12;  /* Volume is FAT12 */
@@ -229,10 +255,10 @@ else if   ( myfat->DataClusters < 65525 )
 	  myfat->FAT = 16; /* Volume is FAT16 */
      else myfat->FAT = 32; /* Volume is FAT32 */
 
-printf("d'apres le nombre de clusters %d, le volume est FAT %d\n", myfat->DataClusters, myfat->FAT );
-/* note : le premier Data Cluster est le numero 2, les clusters
-   0 et 1 sont virtuels mais ont leurs entrees dans la table
- */
+printf("DataClusters %d --> c'est FAT%d\n", myfat->DataClusters, myfat->FAT );
+// note : ci-dessous le +2 vient du fait que les clusters 0 et 1 sont virtuels
+// mais occupent les 2 premieres entrees de la table
+// myfat->DataClusters c'est les vrais clusters utilisables
 myfat->BytesPerFAT = ( ( ( myfat->DataClusters + 2 ) * myfat->FAT ) + 7 ) / 8; /* arrondi par exces */
 SectorsPerFAT2 = ( myfat->BytesPerFAT + (myfat->bps - 1) ) / myfat->bps; /* arrondi par exces */
 printf("nombre de secteurs par FAT recalcule %d (vs %d)\n", SectorsPerFAT2, myfat->SectorsPerFAT );
@@ -241,17 +267,17 @@ if ( SectorsPerFAT2 > myfat->SectorsPerFAT )
 
 if   ( myfat->FAT == 32 )
      {
-     printf("Flags %02X, FAT32 version %04X\n", b->Flags, b->Version );
+     //printf("Flags %02X, FAT32 version %04X\n", b->Flags, b->Version );
      myfat->RootStartCluster = b->RootStartCluster;
      printf("premier cluster du root dir %d\n", b->RootStartCluster );
-     printf("premier secteur de la zone FSinfo %d\n", b->FSInfoSec );
-     printf("premier secteur du backup du boot sector %d\n", b->BkUpBootSec );
-     printf("Drive Number %02X\n", b->DrvNum );
-     printf("Signature (doit etre 29) 0x%02X\n", b->BootSig );
-     printf("Numero de serie %02x%02x%02x%02x ou %08x\n",
-             b->VolID[0], b->VolID[1], b->VolID[2], b->VolID[3], *((int*)b->VolID) );
-     printf("Nom du volume %-.11s\n", b->VolLab );
-     printf("Nom du systeme de fichiers %-.8s\n", b->FileSysType );
+     //printf("premier secteur de la zone FSinfo %d\n", b->FSInfoSec );
+     //printf("premier secteur du backup du boot sector %d\n", b->BkUpBootSec );
+     //printf("Drive Number %02X\n", b->DrvNum );
+     //printf("Signature (doit etre 29) 0x%02X\n", b->BootSig );
+     //printf("Numero de serie %02x%02x%02x%02x ou %08x\n",
+     //        b->VolID[0], b->VolID[1], b->VolID[2], b->VolID[3], *((int*)b->VolID) );
+     //printf("Nom du volume %-.11s\n", b->VolLab );
+     //printf("Nom du systeme de fichiers %-.8s\n", b->FileSysType );
      }
 else {
      d = (FAT16boot *) buf;
@@ -391,6 +417,33 @@ else {
      }
 return(cnt);
 }
+
+// statistiques diverses sur la FAT32
+int FAT32stat( unsigned int * lastused, unsigned int * freecnt, unsigned int * badcnt, unsigned int * EOCcnt )
+{
+
+unsigned int * fat32 = (unsigned int *) myfat->fatbuf;
+unsigned int next, EOC = 0x0FFFFFFF;
+*lastused = 0;
+*freecnt = 0;
+*badcnt = 0;
+*EOCcnt = 0;
+for	( unsigned int clu = 2; clu < (2+myfat->DataClusters); ++clu )
+	{
+	next = fat32[clu] & EOC;
+	if	( next == 0 )
+		(*freecnt)++;
+	else	{
+		(*lastused) = clu;
+		if	( next == EOC )
+			(*EOCcnt)++;
+		else if	( next >= (2+myfat->DataClusters) )
+			(*badcnt)++;
+		}
+	}
+return 0;
+}
+
 
 /* cette fonction convertit la FAT12 en FAT16 */
 void ConvertFAT()
@@ -597,7 +650,7 @@ EOC = (myfat->FAT==32)?(0x0FFFFFFF):((myfat->FAT==12)?(0xFFF):(0xFFFF));
 next = startCluster;
 while	( next != EOC )
         {
-	retval = disk_read( 0, cbuf,			// -2 ? pourquoi ?
+	retval = disk_read( 0, cbuf,			// -2 ? clusters 0 et 1 sont virtuels
 			    myfat->FirstDataSector + (next-2) * myfat->SectorsPerCluster,
 			    myfat->SectorsPerCluster );
 	if	( retval )
@@ -613,3 +666,34 @@ while	( next != EOC )
 close(desthand);
 return(0);
 }
+
+// lecture et copie d'un paquet de secteurs bruts (par clusters entiers)
+int myfat_save_raw( unsigned int startsec, unsigned int qsec, const char * local_path )
+{
+if	( startsec < myfat->FirstDataSector )
+	return -2;
+unsigned int endsec = startsec + qsec;
+if	( endsec >= myfat->TotalSectors )
+	return -3;
+
+int desthand;
+desthand = open( local_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
+if	( desthand <= 0 )
+	return -1;
+
+unsigned int clu_size = myfat->SectorsPerCluster * myfat->bps;
+unsigned char cbuf[clu_size];
+unsigned int isec, retval;
+
+for	( isec = startsec; isec < endsec; isec += myfat->SectorsPerCluster )
+	{
+	retval = disk_read( 0, cbuf, isec, myfat->SectorsPerCluster );
+	if	( retval )
+		return( - 700 - retval );
+	if	( write( desthand, cbuf, clu_size ) != clu_size )
+		return( - 750 );
+	}
+close(desthand);
+return(0);
+}
+

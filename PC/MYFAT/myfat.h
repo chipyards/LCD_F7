@@ -36,6 +36,8 @@ void HAdump( unsigned char * buf, int q );
 int FindFile( char * shortName, unsigned char * dirbuf, int entries, unsigned int * clu, unsigned int * size );
 // cette fontion rend le nombre de clusters de la chaine
 int ScanChain( unsigned int startCluster );
+// statistiques diverses sur la FAT32
+int FAT32stat( unsigned int * lastused, unsigned int * freecnt, unsigned int * badcnt, unsigned int * EOCcnt );
 // cette fonction convertit la FAT12 en FAT16
 void ConvertFAT();
 
@@ -53,5 +55,8 @@ int myfat_read_root_dir();
 // cette fontion alloue charge en memoire les secteurs d'une chaine
 int CopyChain( int startCluster, int nclu, unsigned char ** pbuf );
 
-// lecture et copie locale d'une chaine
+// lecture et copie locale d'une chaine (size en bytes)
 int myfat_save_chain( unsigned int startCluster, unsigned int size, const char * local_path );
+
+// lecture et copie d'un paquet de secteurs bruts
+int myfat_save_raw( unsigned int startsec, unsigned int qsec, const char * local_path );
