@@ -58,5 +58,5 @@ int CopyChain( int startCluster, int nclu, unsigned char ** pbuf );
 // lecture et copie locale d'une chaine (size en bytes)
 int myfat_save_chain( unsigned int startCluster, unsigned int size, const char * local_path );
 
-// lecture et copie d'un paquet de secteurs bruts
-int myfat_save_raw( unsigned int startsec, unsigned int qsec, const char * local_path );
+// lecture et copie d'un paquet de secteurs bruts, en sautant header eventuel
+int myfat_save_raw( unsigned int startsec, unsigned int qsec, unsigned int header, const char * local_path );

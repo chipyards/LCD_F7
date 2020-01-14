@@ -667,30 +667,33 @@ close(desthand);
 return(0);
 }
 
-// lecture et copie d'un paquet de secteurs bruts (par clusters entiers)
-int myfat_save_raw( unsigned int startsec, unsigned int qsec, const char * local_path )
+// lecture et copie d'un paquet de secteurs bruts (par clusters entiers), en sautant header eventuel
+int myfat_save_raw( unsigned int startsec, unsigned int qsec, unsigned int header, const char * local_path )
 {
 //if	( startsec < myfat->FirstDataSector )
 //	return -2;
 unsigned int endsec = startsec + qsec;
+unsigned int clu_size = myfat->SectorsPerCluster * myfat->bps;
+unsigned int write_size = clu_size - header;
+unsigned char cbuf[clu_size];
+unsigned int isec, retval;
 if	( endsec >= myfat->TotalSectors )
 	return -3;
+if	( header >= clu_size )
+	return -4;
 
 int desthand;
 desthand = open( local_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
 if	( desthand <= 0 )
 	return -1;
 
-unsigned int clu_size = myfat->SectorsPerCluster * myfat->bps;
-unsigned char cbuf[clu_size];
-unsigned int isec, retval;
 
 for	( isec = startsec; isec < endsec; isec += myfat->SectorsPerCluster )
 	{
 	retval = disk_read( 0, cbuf, isec, myfat->SectorsPerCluster );
 	if	( retval )
 		return( - 700 - retval );
-	if	( write( desthand, cbuf, clu_size ) != clu_size )
+	if	( write( desthand, cbuf + header, write_size ) != write_size )
 		return( - 750 );
 	}
 close(desthand);
