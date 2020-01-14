@@ -47,13 +47,18 @@ if	( retval )
 		myfat->bps = 512;
 		myfat->TotalSectors = 30302208;
 		myfat->FirstDataSector = 0;
-		unsigned int startsec, qsec;
+		unsigned int startsec, qsec, head;
+		char fnam[64]; 
 		startsec = atoi(argv[2]);
 		qsec = atoi(argv[3]);
-		retval = myfat_save_raw( startsec, qsec, 192*4, "raw192.raw" );
+		if	( argc >= 5 )
+			head = atoi(argv[4]);
+		else	head = 0;
+		snprintf( fnam, sizeof(fnam), "raw%d.raw", head );
+		retval = myfat_save_raw( startsec, qsec, head*4, fnam );
 		if	( retval )
-			{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
-		printf("copie raw sur disque local Ok\n" );
+			{ printf("echec copie %s, err %d\n", fnam, retval ); return(1); }
+		printf("copie %s sur disque local Ok\n", fnam );
 		}
 	return 0;
 	}
@@ -87,15 +92,20 @@ if	( argc == 3 )
 	if	( retval )
 		{ printf("echec copie \"%s\" sur disque local, err %d\n", argv[2], retval ); return(1); }
 	}
-else if	( argc == 4 )
+else if	( argc >= 4 )
 	{		// copier un paquet de secteurs bruts
-	unsigned int startsec, qsec;
+	unsigned int startsec, qsec, head;
+	char fnam[64]; 
 	startsec = atoi(argv[2]);
 	qsec = atoi(argv[3]);
-	retval = myfat_save_raw( startsec, qsec, 192*4, "raw192.raw" );
+	if	( argc >= 5 )
+		head = atoi(argv[4]);
+	else	head = 0;
+	snprintf( fnam, sizeof(fnam), "raw%d.raw", head );
+	retval = myfat_save_raw( startsec, qsec, head*4, fnam );
 	if	( retval )
-		{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
-	printf("copie raw sur disque local Ok\n" );
+		{ printf("echec copie %s, err %d\n", fnam, retval ); return(1); }
+	printf("copie %s sur disque local Ok\n", fnam );
 	}
 	
 

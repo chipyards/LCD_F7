@@ -10,7 +10,7 @@
 // pour eviter 1 copie, le driver SD prendra directement le donnees dans Sfifo, header inclus
 //#define FQBUF (1<<15)	// en frames (stereo buffer) (1<<15) <==> 0.74s @ 44.1kHz <==> 128 kbytes (sur total 320!)
 #define FQBUF  16384	// en frames (stereo buffer) 2 clusters de 32kbytes
-#define FQHEAD 192	// header en ints, pour chaque moitie du buffer
+#define FQHEAD 192	// header en ints, insere au debut de chaque moitie du buffer
 			// nombre d'audio frames = FQBUF - 2*FQHEAD, DOIT etre multiple de AQBUF mais pas puissance de 2
 			// e.g. 16000 frames < 2 SD clusters; chaque cluster contient 8000 frames = 181.4ms @ 44.1kHz
 
@@ -26,6 +26,7 @@ int fifoR;	// index de frame dans abuf.Sfifo pour lecture echo par codec
 int fifoRSD;	// index de frame dans abuf.Sfifo pour lecture echo par SDCard recorder
 int left_peak;	// vu-metre : peak input value (16 bits left_aligned)
 int right_peak;
+int iside;	// index sideband buffer (portion du header de cluster), par unites de 4 bits
 } AUDIObuffers_type;
 
 extern AUDIObuffers_type audio_buf;

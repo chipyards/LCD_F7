@@ -150,16 +150,20 @@ static int SDCard_start_wsec = 0;
 static int SDCard_end_wsec = 0;
 void SDCard_start_recording()
 {
-int * header = audio_buf.Sfifo; int i;
-for	( i = 0; i < FQHEAD; ++i )
-	header[i] = 0x66606600 | i;
-header += FQBUF/2;
-for	( i = 0; i < FQHEAD; ++i )
-	header[i] = 0x66607700 | i;
+int i;
+int * header = audio_buf.Sfifo;		// PING
+header[0] = 0x66606600;
+for	( i = 1; i < FQHEAD; ++i )
+	header[i] = 0;
+header += FQBUF/2;			// PONG
+header[0] = 0x66607700;
+for	( i = 1; i < FQHEAD; ++i )
+	header[i] = 0;
 SDCard_start_wsec = 640000;	// multiple de 64 SVP N.B. carte 16G contient env 30_000_000 sec
 SDCard_end_wsec = SDCard_start_wsec + 3200000; // 1.5G
 SDCard_next_wsec = SDCard_start_wsec;
 }
+
 void SDCard_stop_recording()
 {
 SDCard_end_wsec = SDCard_next_wsec + 64;
@@ -171,7 +175,7 @@ void SDCard_task(void)	// call me at least every 181ms...
 if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
 	{
 	profile_D13(1);
-	int * wbuf = audio_buf.Sfifo + (FQBUF/2);		// PING
+	int * wbuf = audio_buf.Sfifo + (FQBUF/2);		// PONG
 	// mise a jour header
 	if	( SDCard_end_wsec == (SDCard_next_wsec + 64) )
 		wbuf[0] = 0xFFF0FF00;	// flag dernier cluster
@@ -190,7 +194,7 @@ if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
 else if ( ( audio_buf.fifoW > (FQBUF/2) ) && ( audio_buf.fifoRSD < (FQBUF/2) ) )
 	{
 	profile_D13(1);
-	int * wbuf = audio_buf.Sfifo;				// PONG
+	int * wbuf = audio_buf.Sfifo;				// PING
 	if	( SDCard_end_wsec == (SDCard_next_wsec + 64) )
 		wbuf[0] = 0xFFF0FF00;	// flag dernier cluster
 	wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec ) / 64;

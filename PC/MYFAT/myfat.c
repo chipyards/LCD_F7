@@ -668,7 +668,7 @@ return(0);
 }
 
 // verification header specifique manip raw
-int check_header( unsigned char * cbuf, unsigned int header, unsigned int isec, unsigned int cnt )
+int check_header( unsigned char * cbuf, unsigned int header, unsigned int isec, unsigned int cnt, int sidehand )
 {
 if	( header == 0 )
 	return 0;
@@ -681,6 +681,26 @@ if	( ibuf[1] != isec )
 	{ printf("oups %08x @ %d\n", ibuf[1], isec ); return -2; }
 if	( ibuf[2] != cnt )
 	{ printf("oups %08x @ %d\n", ibuf[2], isec ); return -3; }
+if	( sidehand > 0 )
+	{			// extraire les 1000 nibbles, les convertir en 8000 bytes
+	unsigned char sidebuf[8000]; unsigned int nibble, nibbuf=0;
+	ibuf += 4;	// sauter 4 ints
+	int i, j = 0;
+	for	( i = 0; i < 1000; ++i )
+		{
+		if	( ( i % 8 ) == 0 )
+			nibbuf = ibuf[i/8];
+		nibble = nibbuf & 0xF0000000;	// big-endian !!!
+		nibble >>= 25; // 0x00000078 i.e. entre 0 et 7F
+		sidebuf[j++] = (char)nibble;	sidebuf[j++] = (char)nibble;
+		sidebuf[j++] = (char)nibble;	sidebuf[j++] = (char)nibble;
+		sidebuf[j++] = (char)nibble;	sidebuf[j++] = (char)nibble;
+		sidebuf[j++] = (char)nibble;	sidebuf[j++] = (char)nibble;
+		nibbuf <<= 4;
+		}
+	if	( write( sidehand, sidebuf, 8000 ) != 8000 )
+		return( -7 );
+	}
 return 0;
 }
 
@@ -701,17 +721,23 @@ if	( endsec >= myfat->TotalSectors )
 if	( header >= clu_size )
 	return -4;
 
-int desthand;
+int desthand, sidehand=-1;
 desthand = open( local_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
 if	( desthand <= 0 )
 	return -1;
+if	( header == (192*4) )
+	{
+	sidehand = open( "side.raw", O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
+	if	( sidehand <= 0 )
+		return -2;
+	}
 cnt = 0;
 for	( isec = startsec; isec < endsec; isec += myfat->SectorsPerCluster )
 	{
 	retval = disk_read( 0, cbuf, isec, myfat->SectorsPerCluster );
 	if	( retval )
 		return( - 700 - retval );
-	retval = check_header( cbuf, header, isec, cnt++ );
+	retval = check_header( cbuf, header, isec, cnt++, sidehand );
 	if	( retval < 0 )
 		return( - 900 + retval );	// erreur header
 	if	( write( desthand, cbuf + header, write_size ) != write_size )
@@ -720,6 +746,11 @@ for	( isec = startsec; isec < endsec; isec += myfat->SectorsPerCluster )
 		break;				// dernier cluster
 	}
 close(desthand);
+if	( sidehand > 0 )
+	{
+	close(sidehand);
+	printf("copie side.raw sur disque local Ok\n");
+	}
 return(0);
 }
 

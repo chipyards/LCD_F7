@@ -14,6 +14,9 @@
 #include "stm32746g_discovery.h"
 #include "bsp_audio.h"	// inclut chip_wm8994.h
 #include "audio.h"
+#ifdef USE_SIDEBAND
+#include "s_gpio.h"
+#endif
 #include "stdlib.h"	// juste pour abs() !
 
 AUDIObuffers_type audio_buf;
@@ -37,9 +40,10 @@ int retval;
 unsigned int delai;	// le delai de l'echo exprime en frames
 			// le minimum serait AQBUF/2, en effet chaque transfert DMA fait AQBUF/2 samples
 			// le max serait FQBUF - AQBUF/2
-delai = AQBUF/2;
-audio_buf.fifoR = 0;
-audio_buf.fifoW = delai;
+delai = AQBUF/2;	// delai = 8 ==> mesure analog 930 us de delai total @ 44.1 kHz
+audio_buf.fifoR = FQBUF - delai; // fin du PONG
+audio_buf.fifoW = FQHEAD;	 // debut du PING
+audio_buf.iside = 0;
 audio_buf.left_peak = 0;
 audio_buf.right_peak = 0;
 
@@ -83,6 +87,31 @@ wm8994_Set_out_Volume( out_volume );
 
 
 /** private DMA functions --------------------------------------------------- */
+
+#ifdef USE_SIDEBAND
+// cette fonction doit etre appelle tous les (AQBUF/2) samples audio par le DMA
+// le buffer sidebuf est vide tous les clusters i.e. 8000 samples audio
+// avec AQBUF = 16, on a 1000 samples de 4 bits dans 125 ints par cluster
+void sideband_sample_input(void)
+{
+int * sidebuf;		// portion du header de cluster
+static int nibbuf = 0;
+if	( audio_buf.fifoW < (FQBUF/2) )
+	sidebuf = audio_buf.Sfifo + 4;			// PING sauter 4 ints de header du header
+else	sidebuf = audio_buf.Sfifo + 4 + (FQBUF/2);	// PONG
+unsigned int inbits = GPIO_sideband_in();	// acquisition 4 bits utiles
+nibbuf |= inbits;
+if	( (audio_buf.iside % 8) == 7 )		// 8 nibbles par int32
+	{
+	sidebuf[audio_buf.iside/8] = nibbuf;
+	nibbuf = 0;
+	}
+else	nibbuf <<= 4;				// big-endian!!
+audio_buf.iside++;
+if	( audio_buf.iside >= (8000/(AQBUF/2)) )
+	audio_buf.iside = 0;
+}
+#endif
 
 #ifdef ECHO
 // AUDIO OUT sound processing (demo-specific) : sound source for tx DMA
@@ -154,7 +183,10 @@ for	( int i = 0; i < (AQBUF/2); ++i )
 	{
 	sbuf[i] = get_next_stereo_sample();
 	}
-halfo_cnt++;
+#ifdef USE_SIDEBAND
+sideband_sample_input();	// N.B. c'est dans DMA OUT pour alleger DMA IN
+#endif
+// halfo_cnt++;
 }
 
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
@@ -164,7 +196,10 @@ for	( int i = (AQBUF/2); i < AQBUF; ++i )
 	{
 	sbuf[i] = get_next_stereo_sample();
 	}
-fullo_cnt++;
+#ifdef USE_SIDEBAND
+sideband_sample_input();
+#endif
+// fullo_cnt++;
 }
 
 void BSP_AUDIO_IN_HalfTransfer_CallBack(void)

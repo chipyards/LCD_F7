@@ -12,6 +12,7 @@ void GPIO_config_SDCard( void );
 // divers I/O
 int GPIO_bouton_bleu(void);
 int GPIO_SDCARD_present(void);
+unsigned int GPIO_sideband_in(void);
 // action bits profiler
 void profile_D13( int val );
 void profile_D8( int val );

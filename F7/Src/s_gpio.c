@@ -137,4 +137,18 @@ int GPIO_SDCARD_present(void)
 {
 return (!LL_GPIO_IsInputPinSet( GPIOC, LL_GPIO_PIN_13 ));
 }
+
+#ifdef USE_SIDEBAND
+// acquisition de 4 bits de data
+// PF7, PF8, PF9, PF10 aka A5..A2
+unsigned int GPIO_sideband_in(void)
+{
+unsigned int nibble;
+static int cnt = 1; // test
+nibble = cnt & 0xF;
+if	( (++cnt) >= 14 )
+	cnt = 1;
+return nibble;
+}
+#endif
 #endif
