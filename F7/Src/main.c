@@ -634,8 +634,41 @@ init_zones_default();	// doit etre APRES create_menu
 jlcd_interrupt_on();
 jlcd_panel_on();
 
+// la BOUCLE PRINCIPALE
 while	(1)
 	{
+	//profile_D8(0);	// PI2 aka D8 profiler pin
+	#ifdef GREEN_CPU
+	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
+		{
+		// profile_D13(0);	// PI1
+		HAL_PWR_EnterSLEEPMode( PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI );
+		// profile_D13(1);	// PI1
+		}
+	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
+	#else
+	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
+		{}
+	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
+	#endif
+	//profile_D8(1);
+
+	// on arrive ici 1 fois par video frame (moins en cas de surcharge)
+
+	if	(
+		( disk_status(0) == 0 ) &&
+		( ( audio_buf.fifoW - audio_buf.fifoRSD ) > 8192 )
+		)
+		{
+		unsigned char rbuf[512*64];
+		int isec = 0x10000;
+		profile_D13(1);
+		disk_read( 0, rbuf, isec, 64 );
+		disk_read( 0, rbuf, isec+64, 64 );
+		audio_buf.fifoRSD += 8192;
+		profile_D13(0);
+		}
+
 	paint_flag = 0;
 	// traiter le touch
 	BSP_TS_GetState( &TS_State );
@@ -793,8 +826,8 @@ while	(1)
 		#ifdef USE_LOGFIFO
 		#ifdef USE_AUDIO
 		static int dma_cnt = 0;
-		LOGprint("peak %d, ddma %d", peak_in_sl16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
-		peak_in_sl16 = 0;
+		LOGprint("peak %d-%d, ddma %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
+		audio_buf.left_peak = audio_buf.right_peak = 0;
 		// LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
 		// LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
 		#else
@@ -826,23 +859,6 @@ while	(1)
 	}
 	#endif
 
-	//profile_D8(0);	// PI2 aka D8 profiler pin
-
-	#ifdef GREEN_CPU
-	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
-		{
-		// profile_D13(0);	// PI1
-		HAL_PWR_EnterSLEEPMode( PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI );
-		// profile_D13(1);	// PI1
-		}
-	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
-	#else
-	while	( GC.ltdc_irq_cnt == old_ltdc_irq_cnt )
-		{}
-	old_ltdc_irq_cnt = GC.ltdc_irq_cnt;
-	#endif
-
-	//profile_D8(1);
 	}
 }
 

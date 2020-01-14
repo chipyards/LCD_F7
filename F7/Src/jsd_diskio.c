@@ -200,12 +200,12 @@ HAL_SD_ReadBlocks_IT
 	5) appeler SDMMC_CmdReadMultiBlock() ou SDMMC_CmdReadSingleBlock()
 	   --> CMD18 ou CMD17 en passant le num. de block de depart sur la carte
 */
-DRESULT disk_read( BYTE pdrv, BYTE* buff, DWORD sector, UINT count )
+DRESULT disk_read( BYTE pdrv, BYTE* buff, DWORD sector, UINT scount )
 {
 if	( zestatus & STA_NOINIT )
 	return RES_NOTRDY;
 #ifdef USE_SD_INTERRUPT
-if	( HAL_SD_ReadBlocks_IT( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, count ) != HAL_OK )
+if	( HAL_SD_ReadBlocks_IT( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, scount ) != HAL_OK )
 	return RES_ERROR;
 // ici on ne cherche pas a profiter du temps libre mais seulement valider le mode interrupt, alors on attend
 while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL_SD_STATE_READY (meme en cas d'erreur !?)
@@ -213,8 +213,8 @@ while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL
 if	( uSdHandle.ErrorCode != 0 )
 	return RES_ERROR;
 #else
-if	( HAL_SD_ReadBlocks( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, count, SD_TIMEOUT ) != HAL_OK )
-//if	( BSP_SD_ReadBlocks(             (uint32_t*)buff, (uint32_t)sector, count, SD_TIMEOUT ) != MSD_OK )
+if	( HAL_SD_ReadBlocks( &uSdHandle, (uint8_t *)buff, (uint32_t)sector, scount, SD_TIMEOUT ) != HAL_OK )
+//if	( BSP_SD_ReadBlocks(             (uint32_t*)buff, (uint32_t)sector, scount, SD_TIMEOUT ) != MSD_OK )
 	return RES_ERROR;
 #endif
 /* wait until the operation is finished */
@@ -259,12 +259,12 @@ HAL_SD_WriteBlocks_IT
 	5) preparer une struct type SDMMC_DataInitTypeDefde 5 params pour la DPSM (Data Path State Machine)
 	   l'appliquer avec SDMMC_ConfigData() (idem mode polling)
 */
-DRESULT disk_write( BYTE pdrv, const BYTE* buff, DWORD sector, UINT count )
+DRESULT disk_write( BYTE pdrv, const BYTE* buff, DWORD sector, UINT scount )
 {
 if	( zestatus & STA_NOINIT )
 	return RES_NOTRDY;
 #ifdef USE_SD_INTERRUPT
-if	( HAL_SD_WriteBlocks_IT(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), count ) != HAL_OK )
+if	( HAL_SD_WriteBlocks_IT(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), scount ) != HAL_OK )
 	return RES_ERROR;
 // ici on ne cherche pas a profiter du temps libre mais seulement valider le mode interrupt, alors on attend
 while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL_SD_STATE_READY (meme en cas d'erreur !?)
@@ -272,8 +272,8 @@ while	( uSdHandle.State != HAL_SD_STATE_READY )	// la derniere interrupt met HAL
 if	( uSdHandle.ErrorCode != 0 )
 	return RES_ERROR;
 #else
-if	( HAL_SD_WriteBlocks(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), count, SD_TIMEOUT) != HAL_OK)
-//if	( BSP_SD_WriteBlocks(            (uint32_t*)buff,(uint32_t)(sector), count, SD_TIMEOUT) != MSD_OK )
+if	( HAL_SD_WriteBlocks(&uSdHandle, (uint8_t *)buff,(uint32_t)(sector), scount, SD_TIMEOUT) != HAL_OK)
+//if	( BSP_SD_WriteBlocks(            (uint32_t*)buff,(uint32_t)(sector), scount, SD_TIMEOUT) != MSD_OK )
 	return RES_ERROR;
 #endif
 /* wait until the operation is finished */
