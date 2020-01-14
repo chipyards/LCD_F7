@@ -85,18 +85,22 @@ wm8994_Set_out_Volume( out_volume );
 /** private DMA functions --------------------------------------------------- */
 
 #ifdef ECHO
-// AUDIO OUT sound processing (demo-specific) : sound source for tx
+// AUDIO OUT sound processing (demo-specific) : sound source for tx DMA
 int get_next_stereo_sample(void)
 {
-int val = audio_buf.Sfifo[ audio_buf.fifoR & FMASK ];
+int val = audio_buf.Sfifo[audio_buf.fifoR];
 audio_buf.fifoR++;
+if	( audio_buf.fifoR == FQBUF )
+	audio_buf.fifoR = FQHEAD;
+else if	( audio_buf.fifoR == (FQBUF/2) )
+	audio_buf.fifoR = (FQBUF/2)+FQHEAD;
 return val;
 }
 
-// AUDIO IN sound processing (demo-specific) : sound sink for rx
+// AUDIO IN sound processing (demo-specific) : sound sink for rx DMA
 void put_next_stereo_sample( int val )
 {
-audio_buf.Sfifo[ audio_buf.fifoW & FMASK ] = val;
+audio_buf.Sfifo[audio_buf.fifoW] = val;
 // right peak detect
 int p = abs( val );
 if	( p > audio_buf.right_peak )
@@ -106,6 +110,10 @@ p = abs( val << 16 );
 if	( p > audio_buf.left_peak )
 	audio_buf.left_peak = p;
 audio_buf.fifoW++;
+if	( audio_buf.fifoW == FQBUF )
+	audio_buf.fifoW = FQHEAD;
+else if	( audio_buf.fifoW == (FQBUF/2) )
+	audio_buf.fifoW = (FQBUF/2)+FQHEAD;
 }
 
 #endif

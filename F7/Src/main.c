@@ -143,6 +143,29 @@ for	( i = 0; i <=  97; ++i )
 
 // ---------------------- application ----------------------
 
+#ifdef USE_SDCARD
+#define SDCard_MIN_WSEC 32768
+static int SDCard_next_wsec = 0;
+static int SDCard_start_wsec = 0;
+static int SDCard_end_wsec = 0;
+void SDCard_start_recording()
+{
+int * header = audio_buf.Sfifo; int i;
+for	( i = 0; i < FQHEAD; ++i )
+	header[i] = 0x66606600 | i;
+header += FQBUF/2;
+for	( i = 0; i < FQHEAD; ++i )
+	header[i] = 0x66607700 | i;
+SDCard_start_wsec = 640000;	// multiple de 64 SVP N.B. carte 16G contient env 30_000_000 sec
+SDCard_end_wsec = SDCard_start_wsec + 6400;
+SDCard_next_wsec = SDCard_start_wsec;
+}
+void SDCard_stop_recording()
+{
+SDCard_next_wsec = 0;
+}
+#endif
+
 // trace reticule
 void draw_reticle( int x, int y )
 {
@@ -465,6 +488,15 @@ switch	( c )
 		retval = SDCard_append_test( "DEMO.TXT", " Peace", 6 );
 		LOGprint("SDCard_append_test : %d", retval );
 	break;
+	case '@' :	// demarrer enregistrement audio en raw
+		SDCard_start_recording();
+		LOGprint("try record raw from %d to %d", SDCard_start_wsec, SDCard_end_wsec );
+		break;
+	case '$' :
+		SDCard_stop_recording();
+		LOGprint("stop record @ %d", SDCard_next_wsec );
+		break;
+	/*
 	// case '1' :	case '2' :
 	case '3' :	case '4' :	case '5' :
 	case '6' :	case '7' :	case '8' :	case '9' :
@@ -501,6 +533,7 @@ switch	( c )
 			}
 		}
 	break;
+	*/
 	default : unused = 1;
 	} // switch c
 #endif
@@ -655,19 +688,40 @@ while	(1)
 
 	// on arrive ici 1 fois par video frame (moins en cas de surcharge)
 
-	if	(
-		( disk_status(0) == 0 ) &&
-		( ( audio_buf.fifoW - audio_buf.fifoRSD ) > 8192 )
-		)
+	#ifdef USE_SDCARD
+	if	( ( disk_status(0) == 0 ) && ( SDCard_next_wsec >= SDCard_MIN_WSEC ) )
 		{
-		unsigned char rbuf[512*64];
-		int isec = 0x10000;
-		profile_D13(1);
-		disk_read( 0, rbuf, isec, 64 );
-		disk_read( 0, rbuf, isec+64, 64 );
-		audio_buf.fifoRSD += 8192;
-		profile_D13(0);
+		if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
+			{
+			profile_D13(1);
+			int * wbuf = audio_buf.Sfifo + (FQBUF/2);
+			wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec )/64;
+			int retval;
+			retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
+			if	( retval )
+				SDCard_next_wsec = 0;
+			SDCard_next_wsec +=  64;
+			if	( SDCard_next_wsec >= SDCard_end_wsec )
+				SDCard_next_wsec = 0;
+			audio_buf.fifoRSD = FQHEAD;
+			profile_D13(0);
+			}
+		else if ( ( audio_buf.fifoW > (FQBUF/2) ) && ( audio_buf.fifoRSD < (FQBUF/2) ) )
+			{
+			profile_D13(1);
+			int * wbuf = audio_buf.Sfifo;
+			wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec )/64;
+			retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
+			if	( retval )
+				SDCard_next_wsec = 0;
+			SDCard_next_wsec +=  64;
+			if	( SDCard_next_wsec >= SDCard_end_wsec )
+				SDCard_next_wsec = 0;
+			audio_buf.fifoRSD = (FQBUF/2) + FQHEAD;
+			profile_D13(0);
+			}
 		}
+	#endif
 
 	paint_flag = 0;
 	// traiter le touch
@@ -825,9 +879,13 @@ while	(1)
 		{					// traitement cadence a la seconde
 		#ifdef USE_LOGFIFO
 		#ifdef USE_AUDIO
-		static int dma_cnt = 0;
-		LOGprint("peak %d-%d, ddma %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
+		if	( SDCard_next_wsec > 0 )
+			LOGprint("peak %d-%d, %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, (SDCard_next_wsec-SDCard_start_wsec)/64 );
+		else	LOGprint("peak %d-%d", audio_buf.left_peak >> 16, audio_buf.right_peak >> 16 );
+
 		audio_buf.left_peak = audio_buf.right_peak = 0;
+		// static int dma_cnt = 0;
+		// LOGprint("peak %d-%d, ddma %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;
 		// LOGprint("In  DMA %d %d", halfi_cnt, fulli_cnt );
 		// LOGprint("Out DMA %d %d", halfo_cnt, fullo_cnt );
 		#else

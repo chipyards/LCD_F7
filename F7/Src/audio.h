@@ -6,11 +6,13 @@
 #define AQBUF 16	// en frames (stereo buffer)
 #define DMA_PER_SEC	(FSAMP/AQBUF) // buffers entiers par s. (mais il y a 2 DMA irq par buffer)
 
-// delay fifo pour la demo
-//#define FQBUF (1<<15)	// en frames (stereo buffer) (1<<15) <==> 0.74s à 44.1kHz <==> 128 kbytes (sur total 320!)
-#define FQBUF (1<<14)	// en frames (stereo buffer) (1<<14) <==> 16 kframes <==> 64kbyte <==> 2 SD clusters
-			// 1 cluster = 8 kframes = 0.186s
-#define FMASK (FQBUF-1)
+// double buffer audio pour SDCard et echo
+// pour eviter 1 copie, le driver SD prendra directement le donnees dans Sfifo, header inclus
+//#define FQBUF (1<<15)	// en frames (stereo buffer) (1<<15) <==> 0.74s @ 44.1kHz <==> 128 kbytes (sur total 320!)
+#define FQBUF  16384	// en frames (stereo buffer) 2 clusters de 32kbytes
+#define FQHEAD 192	// header en ints, pour chaque moitie du buffer
+			// nombre d'audio frames = FQBUF - 2*FQHEAD, DOIT etre multiple de AQBUF mais pas puissance de 2
+			// e.g. 16000 frames < 2 SD clusters; chaque cluster contient 8000 frames = 181.4ms @ 44.1kHz
 
 // AUDIO buffers
 // ne marche que si les buffers DMA sont AVANT les FIFOS
