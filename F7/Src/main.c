@@ -157,13 +157,54 @@ header += FQBUF/2;
 for	( i = 0; i < FQHEAD; ++i )
 	header[i] = 0x66607700 | i;
 SDCard_start_wsec = 640000;	// multiple de 64 SVP N.B. carte 16G contient env 30_000_000 sec
-SDCard_end_wsec = SDCard_start_wsec + 6400;
+SDCard_end_wsec = SDCard_start_wsec + 3200000; // 1.5G
 SDCard_next_wsec = SDCard_start_wsec;
 }
 void SDCard_stop_recording()
 {
-SDCard_next_wsec = 0;
+SDCard_end_wsec = SDCard_next_wsec + 64;
 }
+
+#ifdef USE_AUDIO
+void SDCard_task(void)	// call me at least every 181ms...
+{
+if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
+	{
+	profile_D13(1);
+	int * wbuf = audio_buf.Sfifo + (FQBUF/2);		// PING
+	// mise a jour header
+	if	( SDCard_end_wsec == (SDCard_next_wsec + 64) )
+		wbuf[0] = 0xFFF0FF00;	// flag dernier cluster
+	wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec ) / 64;
+	// ecriture carte
+	int retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
+	if	( retval )
+		SDCard_next_wsec = 0;
+	// preparation prochain cluster
+	SDCard_next_wsec += 64;
+	if	( SDCard_next_wsec >= SDCard_end_wsec )
+		SDCard_next_wsec = 0;
+	audio_buf.fifoRSD = FQHEAD;
+	profile_D13(0);
+	}
+else if ( ( audio_buf.fifoW > (FQBUF/2) ) && ( audio_buf.fifoRSD < (FQBUF/2) ) )
+	{
+	profile_D13(1);
+	int * wbuf = audio_buf.Sfifo;				// PONG
+	if	( SDCard_end_wsec == (SDCard_next_wsec + 64) )
+		wbuf[0] = 0xFFF0FF00;	// flag dernier cluster
+	wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec ) / 64;
+	int retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
+	if	( retval )
+		SDCard_next_wsec = 0;
+	SDCard_next_wsec += 64;
+	if	( SDCard_next_wsec >= SDCard_end_wsec )
+		SDCard_next_wsec = 0;
+	audio_buf.fifoRSD = (FQBUF/2) + FQHEAD;
+	profile_D13(0);
+	}
+}
+#endif
 #endif
 
 // trace reticule
@@ -690,37 +731,7 @@ while	(1)
 
 	#ifdef USE_SDCARD
 	if	( ( disk_status(0) == 0 ) && ( SDCard_next_wsec >= SDCard_MIN_WSEC ) )
-		{
-		if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
-			{
-			profile_D13(1);
-			int * wbuf = audio_buf.Sfifo + (FQBUF/2);
-			wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec )/64;
-			int retval;
-			retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
-			if	( retval )
-				SDCard_next_wsec = 0;
-			SDCard_next_wsec +=  64;
-			if	( SDCard_next_wsec >= SDCard_end_wsec )
-				SDCard_next_wsec = 0;
-			audio_buf.fifoRSD = FQHEAD;
-			profile_D13(0);
-			}
-		else if ( ( audio_buf.fifoW > (FQBUF/2) ) && ( audio_buf.fifoRSD < (FQBUF/2) ) )
-			{
-			profile_D13(1);
-			int * wbuf = audio_buf.Sfifo;
-			wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec )/64;
-			retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
-			if	( retval )
-				SDCard_next_wsec = 0;
-			SDCard_next_wsec +=  64;
-			if	( SDCard_next_wsec >= SDCard_end_wsec )
-				SDCard_next_wsec = 0;
-			audio_buf.fifoRSD = (FQBUF/2) + FQHEAD;
-			profile_D13(0);
-			}
-		}
+		SDCard_task();
 	#endif
 
 	paint_flag = 0;

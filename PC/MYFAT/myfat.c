@@ -667,6 +667,24 @@ close(desthand);
 return(0);
 }
 
+// verification header specifique manip raw
+int check_header( unsigned char * cbuf, unsigned int header, unsigned int isec, unsigned int cnt )
+{
+if	( header == 0 )
+	return 0;
+int * ibuf = (int *)cbuf;
+if	( ibuf[0] == 0xFFF0FF00 )
+	{ printf("fini\n"); return 1; }
+if	( ( ibuf[0] & 0xFFFFEEFF ) != 0x66606600 )
+	{ printf("oups %08x @ %d\n", ibuf[0], isec ); return -1; }
+if	( ibuf[1] != isec )
+	{ printf("oups %08x @ %d\n", ibuf[1], isec ); return -2; }
+if	( ibuf[2] != cnt )
+	{ printf("oups %08x @ %d\n", ibuf[2], isec ); return -3; }
+return 0;
+}
+
+
 // lecture et copie d'un paquet de secteurs bruts (par clusters entiers), en sautant header eventuel
 int myfat_save_raw( unsigned int startsec, unsigned int qsec, unsigned int header, const char * local_path )
 {
@@ -676,7 +694,8 @@ unsigned int endsec = startsec + qsec;
 unsigned int clu_size = myfat->SectorsPerCluster * myfat->bps;
 unsigned int write_size = clu_size - header;
 unsigned char cbuf[clu_size];
-unsigned int isec, retval;
+unsigned int isec, cnt;
+int retval;
 if	( endsec >= myfat->TotalSectors )
 	return -3;
 if	( header >= clu_size )
@@ -686,15 +705,19 @@ int desthand;
 desthand = open( local_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666 );
 if	( desthand <= 0 )
 	return -1;
-
-
+cnt = 0;
 for	( isec = startsec; isec < endsec; isec += myfat->SectorsPerCluster )
 	{
 	retval = disk_read( 0, cbuf, isec, myfat->SectorsPerCluster );
 	if	( retval )
 		return( - 700 - retval );
+	retval = check_header( cbuf, header, isec, cnt++ );
+	if	( retval < 0 )
+		return( - 900 + retval );	// erreur header
 	if	( write( desthand, cbuf + header, write_size ) != write_size )
 		return( - 750 );
+	if	( retval == 1 )
+		break;				// dernier cluster
 	}
 close(desthand);
 return(0);
