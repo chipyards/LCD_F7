@@ -50,9 +50,10 @@ if	( retval )
 		unsigned int startsec, qsec;
 		startsec = atoi(argv[2]);
 		qsec = atoi(argv[3]);
-		retval = myfat_save_raw( startsec, qsec, "rawNF.bin" );
+		retval = myfat_save_raw( startsec, qsec, 192*4, "raw192.raw" );
 		if	( retval )
 			{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
+		printf("copie raw sur disque local Ok\n" );
 		}
 	return 0;
 	}
@@ -91,9 +92,10 @@ else if	( argc == 4 )
 	unsigned int startsec, qsec;
 	startsec = atoi(argv[2]);
 	qsec = atoi(argv[3]);
-	retval = myfat_save_raw( startsec, qsec, "raw.bin" );
+	retval = myfat_save_raw( startsec, qsec, 192*4, "raw192.raw" );
 	if	( retval )
 		{ printf("echec copie raw sur disque local, err %d\n", retval ); return(1); }
+	printf("copie raw sur disque local Ok\n" );
 	}
 	
 
