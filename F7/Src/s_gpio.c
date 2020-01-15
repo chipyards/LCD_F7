@@ -139,15 +139,34 @@ return (!LL_GPIO_IsInputPinSet( GPIOC, LL_GPIO_PIN_13 ));
 }
 
 #ifdef USE_SIDEBAND
+void GPIO_config_sideband( void )
+{
+LL_GPIO_InitTypeDef gpio_initstruct;
+// port F
+LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOF);
+// PF7, PF8, PF9, PF10 aka A5..A2
+gpio_initstruct.Mode       = LL_GPIO_MODE_INPUT;
+gpio_initstruct.Speed      = LL_GPIO_SPEED_FREQ_LOW;
+gpio_initstruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+gpio_initstruct.Pull       = LL_GPIO_PULL_UP;	//
+gpio_initstruct.Pin        = LL_GPIO_PIN_7 | LL_GPIO_PIN_8 | LL_GPIO_PIN_9 | LL_GPIO_PIN_10;
+LL_GPIO_Init(GPIOF, &gpio_initstruct);
+}
+
 // acquisition de 4 bits de data
 // PF7, PF8, PF9, PF10 aka A5..A2
 unsigned int GPIO_sideband_in(void)
 {
 unsigned int nibble;
+/* generateur de nibbles pour test
 static int cnt = 1; // test
 nibble = cnt & 0xF;
 if	( (++cnt) >= 14 )
 	cnt = 1;
+*/
+nibble = LL_GPIO_ReadInputPort(GPIOF);
+nibble >>= 7;
+nibble &= 0x0F;
 return nibble;
 }
 #endif

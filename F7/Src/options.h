@@ -11,8 +11,9 @@
 #define USE_LOGFIFO		// fifo forwardable vers transcript et/ou CDC
 #define USE_TRANSCRIPT		// scrollable transcript zone, necessite LOGFIFO
 // #define USE_DEMO		// demo des fonts
-#define USE_TIME_DATE		// affichage de l'heure
-// #define USE_PARAM		// demo de page de parametres ajustables
+// #define USE_LOCPIX		// reticule pour debug layout GUI
+// #define USE_TIME_DATE	// affichage de l'heure
+#define USE_PARAM		// demo de page de parametres ajustables
 #define USE_AUDIO
 #define USE_SIDEBAND		// utilise par audio record avec SDCard
 #define USE_SDCARD		// support SD-Card (FAT32 FS + RAW)

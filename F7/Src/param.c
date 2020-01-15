@@ -11,27 +11,25 @@
 PARAMtype para;
 
 PARAMitem lesparams[] = {
-{"byte",	0,	256,	0 },
-{"dizaine",	0,	10,	0 },
-{"douzaine",	1,	13,	1 },
-{"centaine",	0,	100,	0 },
-{"bool",	0,	2,	0 },
-{"byte 2",	0,	256,	0 },
-{"byte 3",	0,	256,	0 },
-{"byte 4",	0,	256,	0 },
-{"byte 5",	0,	256,	0 },
+//		min	max	val	chng
+{"vol out",	0,	64,	41,	0 },
+{"vol in",	0,	52,	11,	0 },
+{"unlock",	0,	99,	0,	0 },
 };
 
 // constructeur
 void param_init( const JFONT * lafont, int x0, int dx )
 {
+para.qitem = sizeof(lesparams) / sizeof(PARAMitem);
+para.font = lafont;
 para.x0 = x0;
 para.dx = dx;
-para.pitch = ( lafont->dy * 7 ) / 4;	// i.e. on met plus de space entre les lignes (arbitrairement)
 para.items = lesparams;
-para.qitem = sizeof(lesparams) / sizeof(PARAMitem);
+int pitchoun = LCD_DY / ( 2 + para.qitem );		// occuper tout l'espace
+if	( pitchoun < ( ( lafont->dy * 7 ) / 4 ) )	// si trop serre, on devra scroller
+	pitchoun = ( lafont->dy * 7 ) / 4;		// i.e. espace minimum entre les lignes (arbitraire)
+para.pitch = pitchoun;
 para.dy = ( 2 + para.qitem ) * para.pitch; // marges = 1 pitch
-para.font = lafont;
 para.xv = para.dx - 5 * lafont->dx;
 para.last_ypos = 0;
 para.curitem = 0;
@@ -95,10 +93,11 @@ if	( para.selitem >= para.qitem )
 	para.selitem = para.qitem - 1; 
 }
 
-// enregistrer la valeur du param en fin d'edition
+// enregistrer la valeur du param en fin d'edition, et quitter le mode adj
 void param_save(void)
 {
 para.items[para.selitem].val = adj.val;
+para.items[para.selitem].changed = 1;
 para.editing = 0;
 // para.selitem = -1;
 }
@@ -118,4 +117,41 @@ if	( ( para.editing == 0 ) && ( is >= 0 ) && ( is < para.qitem ) )
 return ypos;
 }
 
+// rend l'indice du premier param qui a change, -1 si aucun ou si adj en cours
+int param_scan(void)
+{
+if	( para.editing )
+	return -1;
+for	( int i = 0; i < para.qitem; ++i )
+	{
+	if	( para.items[i].changed )
+		return i;
+	}
+return -1;
+}
+
+// rend la valeur du param, et le marque lu
+int param_get_val( unsigned int i )
+{
+if	( i < para.qitem )
+	{
+	para.items[i].changed = 0;
+	return para.items[i].val;
+	}
+return 0;
+}
+
+// fixe la valeur du param, et le marque lu
+void param_set_val( unsigned int i, int val )
+{
+if	( ( i < para.qitem ) && ( para.editing == 0 ) )
+	{
+	para.items[i].changed = 0;
+	if	( val < para.items[i].min )
+		val = para.items[i].min;
+	if	( val >= para.items[i].max )
+		val = para.items[i].max - 1;
+	para.items[i].val = val;
+	}
+}
 #endif

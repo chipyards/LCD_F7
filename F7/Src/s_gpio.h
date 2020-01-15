@@ -9,6 +9,7 @@ void GPIO_config_uart1(void);
 void GPIO_config_uart6(void);
 void GPIO_config_profiler_PI1_PI2( void );
 void GPIO_config_SDCard( void );
+void GPIO_config_sideband( void );
 // divers I/O
 int GPIO_bouton_bleu(void);
 int GPIO_SDCARD_present(void);

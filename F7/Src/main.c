@@ -297,7 +297,9 @@ menu_add( DEMO_FLAG, "FONTS DEMO" );
 #ifdef USE_PARAM
 menu_add( PARAM_FLAG, "PARAMETRES" );
 #endif
+#ifdef USE_LOCPIX
 menu_add( LOCPIX_FLAG, "LOCPIX" );
+#endif
 }
 
 // toutes les operations de trace
@@ -489,6 +491,22 @@ if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
 	#endif
 	}
 }
+
+#ifdef USE_PARAM
+// interpreteur d'edition de parametre
+void param_handler( int item, int val )
+{
+switch	( item )
+	{
+	case 0 :
+		set_out_volume( val );
+		LOGprint("out vol. %d", get_out_volume() ); break;
+	case 1 :
+		set_line_in_volume( val );
+		LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+	}
+}
+#endif
 
 // interpreteur de commandes sur 1 char
 static void cmd_handler( int c )
@@ -702,6 +720,10 @@ LOGprint("AUDIO start %d Hz", FSAMP );
 LOGprint("%d DMA per sec.", DMA_PER_SEC );
 #endif
 
+#ifdef USE_SIDEBAND
+GPIO_config_sideband();
+#endif
+
 #ifdef USE_PARAM
 param_init( &JFont20, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
 #endif
@@ -786,9 +808,9 @@ while	(1)
 		}
 	else if	( TS_State.touchDetected == 2 )
 		{	// double touch :
+		#ifdef USE_TIME_DATE
 		int x2 = TS_State.touchX[1];
 		int y2 = TS_State.touchY[1];
-		#ifdef USE_TIME_DATE
 		if	(				// gerer l'entree dans un ajustement horaire
 			( old_touch_cnt == 1 ) &&	// one_shot
 			( ( show_flags & TIME_ADJ_FLAGS ) == 0 ) &&
@@ -879,7 +901,7 @@ while	(1)
 				{
 				if	( para.editing )
 					{
-					param_save();
+					param_save();	// enregistrer la valeur et quitter le mode adj
 					unscroll();
 					}
 				paint_flag = 1;
@@ -923,6 +945,14 @@ while	(1)
 		repaint( &TS_State );
 		LTDC->SRCR |= LTDC_SRCR_VBR;
 		}
+
+	#ifdef USE_PARAM
+	{
+	int item = param_scan();
+	if	( item >= 0 )
+		param_handler( item, param_get_val( item ) );
+	}
+	#endif
 
 	#ifdef USE_UART1
 	{
