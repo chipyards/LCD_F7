@@ -361,7 +361,7 @@ uint32_t wm8994_Init(uint16_t OutputInputDevice, uint8_t Volume, uint32_t AudioF
       power_mgnt_reg_1 |= 0x0003;
       counter += CODEC_IO_Write(0x01, power_mgnt_reg_1);	// R1 Power
 
-      wm8994_Set_line_in_Volume( 11 );		// 0dB
+      wm8994_Set_line_in_Volume( 11, 11 );		// 0dB
 
       /* IN1LN_TO_IN1L, IN1LP_TO_VMID, IN1RN_TO_IN1R, IN1RP_TO_VMID */
       counter += CODEC_IO_Write(0x28, 0x0011);	// R40 analog mix select
@@ -516,10 +516,10 @@ return counter;
 
 // analog line in volume control
 // 1.5 dB/step, 0dB = 11, full scale 51
-uint32_t wm8994_Set_line_in_Volume( unsigned int vol )
+uint32_t wm8994_Set_line_in_Volume( unsigned int Lvol, unsigned int Rvol )
 {
 uint32_t counter = 0;
-int boost30 = 0;
+int Lboost30, Rboost30;
 // on met le vol digital à 0dB
 /* Left AIF1 ADC1 volume */
 counter += CODEC_IO_Write( 0x400, 0xC0 | 0x100 );		// R1024 ADC1 to AIF1 vol.
@@ -532,21 +532,18 @@ counter += CODEC_IO_Write( 0x401, 0xC0 | 0x100 );		// R1025 ADC1 to AIF1 vol.
 //	R24	0	31	12	31
 //	boost	0	 0	1	1
 //	dB	-16.5	+30	+31.5	+60
-if	( vol > 51 )
-	vol = 51;
-if	( vol > 31 )
-	{
-	boost30 = 0x10;
-	vol -= 20;
-	}
+if	( Lvol > 51 )	Lvol = 51;
+if	( Lvol > 31 )	{ Lboost30 = 0x10; Lvol -= 20; } else Lboost30 = 0;
+if	( Rvol > 51 )	Rvol = 51;
+if	( Rvol > 31 )	{ Rboost30 = 0x10; Rvol -= 20; } else Rboost30 = 0;
 
-counter += CODEC_IO_Write( 0x18, vol | 0x100 );		// R24 IN1 L analog vol
+counter += CODEC_IO_Write( 0x18, Lvol | 0x100 );		// R24 IN1 L analog vol
 							// VU bit = 100, 0dB = 0B, FS = 1F
-counter += CODEC_IO_Write( 0x1A, vol | 0x100 );		// R26 IN1 R analog vol
+counter += CODEC_IO_Write( 0x1A, Rvol | 0x100 );		// R26 IN1 R analog vol
 
-counter += CODEC_IO_Write( 0x29, 0x20 | boost30 );	// R41 MIXINL analog mix
+counter += CODEC_IO_Write( 0x29, 0x20 | Lboost30 );	// R41 MIXINL analog mix
 						// IN1L = 0020, 30dB boost = 0010
-counter += CODEC_IO_Write( 0x2A, 0x20 | boost30 );	// R42 MIXINL analog mix
+counter += CODEC_IO_Write( 0x2A, 0x20 | Rboost30 );	// R42 MIXINL analog mix
 						// IN1R = 0020, 30dB boost = 0010
 
 return counter;

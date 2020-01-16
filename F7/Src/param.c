@@ -13,8 +13,10 @@ PARAMtype para;
 PARAMitem lesparams[] = {
 //		min	max	val	chng
 {"vol out",	0,	64,	41,	0 },
-{"vol in",	0,	52,	11,	0 },
-{"unlock",	0,	99,	0,	0 },
+{"vol in L",	0,	52,	11,	0 },
+{"vol in R",	0,	52,	11,	0 },
+{"session #",	0,	30,	0,	0 },
+{"rec on/off",	0,	9,	0,	0 }
 };
 
 // constructeur

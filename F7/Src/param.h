@@ -5,7 +5,7 @@ typedef struct {
 const char * label;
 int min;	// min inclus
 int max;	// max exclu
-int val;
+int val;	// >= 0 car adju ne supporte pas les valeurs negatives (FIX ME)
 int changed;
 } PARAMitem;
 

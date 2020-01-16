@@ -145,11 +145,26 @@ for	( i = 0; i <=  97; ++i )
 
 #ifdef USE_SDCARD
 #define SDCard_MIN_WSEC 32768
-static int SDCard_next_wsec = 0;
-static int SDCard_start_wsec = 0;
+static int SDCard_session = 0;	// le num de session determine la position des data sur la SD
+static int SDCard_next_wsec = 0;	// zero indique repos
+static int SDCard_start_wsec = 0;	// multiple de 64 SVP
 static int SDCard_end_wsec = 0;
+
 void SDCard_start_recording()
 {
+if	( SDCard_next_wsec )
+	return;
+if	( disk_status(0) )
+	{
+	disk_initialize( 0 );
+	unsigned int val = 0;
+	disk_ioctl( 0, GET_SECTOR_COUNT, &val );
+	if	( val > 0 )
+		LOGprint("Total Sectors : %d", val );
+	else	LOGprint("SD fail !!");
+	}
+if	( disk_status(0) )
+	return;
 int i;
 int * header = audio_buf.Sfifo;		// PING
 header[0] = 0x66606600;
@@ -159,14 +174,37 @@ header += FQBUF/2;			// PONG
 header[0] = 0x66607700;
 for	( i = 1; i < FQHEAD; ++i )
 	header[i] = 0;
-SDCard_start_wsec = 640000;	// multiple de 64 SVP N.B. carte 16G contient env 30_000_000 sec
-SDCard_end_wsec = SDCard_start_wsec + 3200000; // 1.5G
+#ifdef USE_PARAM
+SDCard_session = param_get_val(3);
+#endif
+switch	( SDCard_session )	// on accepte que les multiples de 3
+	{
+	case 3 : // 1200000
+	case 6 : // 1200000*2 etc...
+	case 9 :
+	case 12 :
+	case 15 :
+	case 18 :
+	case 21 :
+	case 24 : SDCard_start_wsec = (1200000/3) * SDCard_session; break;
+	default : SDCard_start_wsec = 0;
+	}
+/* aspects quantitatifs de l'enregistrement audio+sideband
+ * hyp. 44.1 kHz, 8000 samples et 192 ints de sideband par cluster
+ * ==> 1h = 1270080 secteurs = 650280960 bytes (contre 635040000 bytes en audio pur)
+ * on fixe les sessions a 1200000 secteurs max
+ *  N.B. carte 16G contient env 30_000_000 sec
+ */
+SDCard_end_wsec = SDCard_start_wsec + 1200000; // 1 petite heure
 SDCard_next_wsec = SDCard_start_wsec;
 }
 
 void SDCard_stop_recording()
 {
 SDCard_end_wsec = SDCard_next_wsec + 64;
+#ifdef USE_PARAM
+param_set_val( 3, 0 );	// eviter redemarrage intempestif sur la meme session
+#endif
 }
 
 #ifdef USE_AUDIO
@@ -183,7 +221,7 @@ if	( ( audio_buf.fifoW < (FQBUF/2) ) && ( audio_buf.fifoRSD > (FQBUF/2) ) )
 	// ecriture carte
 	int retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
 	if	( retval )
-		SDCard_next_wsec = 0;
+		{ SDCard_next_wsec = 0; return; }
 	// preparation prochain cluster
 	SDCard_next_wsec += 64;
 	if	( SDCard_next_wsec >= SDCard_end_wsec )
@@ -200,7 +238,7 @@ else if ( ( audio_buf.fifoW > (FQBUF/2) ) && ( audio_buf.fifoRSD < (FQBUF/2) ) )
 	wbuf[1] = SDCard_next_wsec; wbuf[2] = ( SDCard_next_wsec - SDCard_start_wsec ) / 64;
 	int retval = disk_write( 0, (unsigned char *)wbuf, SDCard_next_wsec, 64 );
 	if	( retval )
-		SDCard_next_wsec = 0;
+		{ SDCard_next_wsec = 0; return; }
 	SDCard_next_wsec += 64;
 	if	( SDCard_next_wsec >= SDCard_end_wsec )
 		SDCard_next_wsec = 0;
@@ -502,8 +540,25 @@ switch	( item )
 		set_out_volume( val );
 		LOGprint("out vol. %d", get_out_volume() ); break;
 	case 1 :
-		set_line_in_volume( val );
-		LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+		set_line_in_volumeL( val );
+		LOGprint("line_in vol. L %d", get_line_in_volumeL() ); break;
+	case 2 :
+		set_line_in_volumeR( val );
+		LOGprint("line_in vol. R %d", get_line_in_volumeR() ); break;
+	case 3 :
+		LOGprint("session # %d", val ); break;
+	case 4 :
+		if	( val == 1 )
+			{
+			SDCard_start_recording();
+			LOGprint("try record %d to %d", SDCard_start_wsec, SDCard_end_wsec );
+			}
+		if	( val == 5 )
+			{
+			SDCard_stop_recording();
+			LOGprint("stop record @ %d", SDCard_next_wsec );
+			}
+		break;
 	}
 }
 #endif
@@ -527,10 +582,10 @@ switch	( c )
 		retval = disk_initialize( 0 );
 		// en deduire quelques params
 		unsigned int val = 666;
-		retval = disk_ioctl( 0, GET_SECTOR_SIZE, &val );
-		LOGprint("Sector Size : %d", val );
-		retval = disk_ioctl( 0, GET_BLOCK_SIZE, &val );
-		LOGprint("Sector per block : %d", val );
+		// retval = disk_ioctl( 0, GET_SECTOR_SIZE, &val );	// sert a rien tjrs 512
+		// LOGprint("Sector Size : %d", val );
+		// retval = disk_ioctl( 0, GET_BLOCK_SIZE, &val );	// sert a rien tjrs 1
+		// LOGprint("Sector per block : %d", val );
 		retval = disk_ioctl( 0, GET_SECTOR_COUNT, &val );
 		LOGprint("Total Sectors : %d", val );
 		// monter le FS
@@ -552,6 +607,9 @@ switch	( c )
 		LOGprint("SDCard_append_test : %d", retval );
 	break;
 	case '@' :	// demarrer enregistrement audio en raw
+		#ifdef USE_PARAM
+		param_set_val( 3, 24 );
+		#endif
 		SDCard_start_recording();
 		LOGprint("try record raw from %d to %d", SDCard_start_wsec, SDCard_end_wsec );
 		break;
@@ -608,10 +666,10 @@ switch	(c)
 			LOGprint("out vol. %d", get_out_volume() ); break;
 	case '<' :	set_out_volume( get_out_volume() - 1 );
 			LOGprint("out vol. %d", get_out_volume() ); break;
-	case 'W' :	set_line_in_volume( get_line_in_volume() + 1 );
-			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
-	case 'w' :	set_line_in_volume( get_line_in_volume() - 1 );
-			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+//	case 'W' :	set_line_in_volume( get_line_in_volume() + 1 );
+//			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
+//	case 'w' :	set_line_in_volume( get_line_in_volume() - 1 );
+//			LOGprint("line_in vol. %d", get_line_in_volume() ); break;
 	case 'X' :	set_mic_volume( get_mic_volume() + 1 );
 			LOGprint("mic vol. %d", get_mic_volume() ); break;
 	case 'x' :	set_mic_volume( get_mic_volume() - 1 );
@@ -916,9 +974,17 @@ while	(1)
 		{					// traitement cadence a la seconde
 		#ifdef USE_LOGFIFO
 		#ifdef USE_AUDIO
+		char status[8];		// cMRX
+		status[0] = (GPIO_SDCARD_present()?('c'):('-'));
+		status[1] = (disk_status(0)?('-'):('M'));
+		status[2] = ((SDCard_next_wsec>=SDCard_MIN_WSEC)?('R'):('-'));
+		status[3] = GPIO_sideband_in();
+		if	( status[3] < 10 ) status[3] += '0'; else status[3] += ('A'-10);
+		status[4] = 0;
 		if	( SDCard_next_wsec > 0 )
-			LOGprint("peak %d-%d, %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, (SDCard_next_wsec-SDCard_start_wsec)/64 );
-		else	LOGprint("peak %d-%d", audio_buf.left_peak >> 16, audio_buf.right_peak >> 16 );
+			LOGprint("%s peak %d-%d, %d", status, audio_buf.left_peak >> 16, audio_buf.right_peak >> 16,
+				 (SDCard_next_wsec-SDCard_start_wsec)/64 );
+		else	LOGprint("%s peak %d-%d",     status, audio_buf.left_peak >> 16, audio_buf.right_peak >> 16 );
 
 		audio_buf.left_peak = audio_buf.right_peak = 0;
 		// static int dma_cnt = 0;

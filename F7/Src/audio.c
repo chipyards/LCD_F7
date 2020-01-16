@@ -23,7 +23,8 @@ AUDIObuffers_type audio_buf;
 
 // reglages
 int mic_volume = 200;		// 0.375 dB/step, 0 = mute, FS = 239
-int line_in_volume = 11;	// 1.5 dB/step, 0dB = 11, full scale 51
+int line_in_volumeL = 11;	// 1.5 dB/step, 0dB = 11, full scale 51
+int line_in_volumeR = 11;	// 1.5 dB/step, 0dB = 11, full scale 51
 int out_volume = 41;		// 1dB/step, 0dB = 57, full-scale 63
 
 // variable pour observation/debug
@@ -64,7 +65,7 @@ void audio_start(void)
 BSP_AUDIO_OUT_Play( (uint16_t*)(audio_buf.txbuf), AQBUF*4 );	// ridicule, sera divise par 2
 BSP_AUDIO_IN_Record( (uint16_t*)(audio_buf.rxbuf), AQBUF*2 );
 wm8994_Set_DMIC_Volume( mic_volume );
-wm8994_Set_line_in_Volume( line_in_volume );
+wm8994_Set_line_in_Volume( line_in_volumeL, line_in_volumeR );
 wm8994_Set_out_Volume( out_volume );
 }
 #endif
@@ -260,12 +261,21 @@ wm8994_Set_out_Volume( out_volume );
 }
 
 // 1.5 dB/step, 0dB = 11, full scale 51
-void set_line_in_volume( int volume )
+void set_line_in_volumeL( int volume )
 {
-line_in_volume = volume;
-if	( line_in_volume > 51 ) line_in_volume = 51;
-if	( line_in_volume < 0 ) line_in_volume = 0;
-wm8994_Set_line_in_Volume( line_in_volume );
+line_in_volumeL = volume;
+if	( line_in_volumeL > 51 ) line_in_volumeL = 51;
+if	( line_in_volumeL < 0 ) line_in_volumeL = 0;
+wm8994_Set_line_in_Volume( line_in_volumeL, line_in_volumeR );
+}
+
+// 1.5 dB/step, 0dB = 11, full scale 51
+void set_line_in_volumeR( int volume )
+{
+line_in_volumeR = volume;
+if	( line_in_volumeR > 51 ) line_in_volumeR = 51;
+if	( line_in_volumeR < 0 ) line_in_volumeR = 0;
+wm8994_Set_line_in_Volume( line_in_volumeL, line_in_volumeR );
 }
 
 // 0.375 dB/step, 0 = mute, FS = 239
@@ -279,8 +289,10 @@ wm8994_Set_DMIC_Volume( mic_volume );
 
 int get_out_volume(void)
 { return out_volume; }
-int get_line_in_volume(void)
-{ return line_in_volume; }
+int get_line_in_volumeL(void)
+{ return line_in_volumeL; }
+int get_line_in_volumeR(void)
+{ return line_in_volumeR; }
 int get_mic_volume(void)
 { return mic_volume; }
 
