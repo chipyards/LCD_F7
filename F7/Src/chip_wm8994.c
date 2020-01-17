@@ -352,7 +352,7 @@ uint32_t wm8994_Init(uint16_t OutputInputDevice, uint8_t Volume, uint32_t AudioF
 
       /* AIF ADC2 HPF enable, HPF cut = voice mode 1 fc=127Hz at fs=8kHz */
       // counter += CODEC_IO_Write(0x411, 0x3800);	// R1041 AIF1 DMIC2 filters
-      /* AIF ADC2 HPF enable, HPF cut = hifi mode fc=4Hz at fs=48kHz */
+      /* AIF ADC2 HPF enable, HPF cut = hifi mode fc=4Hz at fs=48kHz JLN modif */
       counter += CODEC_IO_Write(0x411, 0x1800);		// R1041 AIF1 DMIC2 filters
     }
     else if ((input_device == INPUT_DEVICE_INPUT_LINE_1) || (input_device == INPUT_DEVICE_INPUT_LINE_2))
@@ -368,7 +368,9 @@ uint32_t wm8994_Init(uint16_t OutputInputDevice, uint8_t Volume, uint32_t AudioF
 						// IN1 Single end line in = 0011
 
       /* AIF ADC1 HPF enable, HPF cut = hifi mode fc=4Hz at fs=48kHz */
-      counter += CODEC_IO_Write(0x410, 0x1800);	// R1040 AIF1 ADC1 filters
+      // counter += CODEC_IO_Write(0x410, 0x1800);	// R1040 AIF1 ADC1 filters
+      /* AIF ADC1 HPF disable JLN modif */
+      counter += CODEC_IO_Write(0x410, 0x0);		// R1040 AIF1 ADC1 filters
     }
   }
   /* Return communication control value */
@@ -514,7 +516,7 @@ counter += CODEC_IO_Write( 0x405, vol | 0x100);		// R1029 DMIC2 vol.
 return counter;
 }
 
-// analog line in volume control
+// analog line in volume control	// JLN modif : separer L et R
 // 1.5 dB/step, 0dB = 11, full scale 51
 uint32_t wm8994_Set_line_in_Volume( unsigned int Lvol, unsigned int Rvol )
 {

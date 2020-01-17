@@ -27,6 +27,9 @@ int fifoRSD;	// index de frame dans abuf.Sfifo pour lecture echo par SDCard reco
 int left_peak;	// vu-metre : peak input value (16 bits left_aligned)
 int right_peak;
 int iside;	// index sideband buffer (portion du header de cluster), par unites de 4 bits
+int side1_his;	// hsitogramme des bits de sudeband
+int side2_his;
+int side3_his;
 } AUDIObuffers_type;
 
 extern AUDIObuffers_type audio_buf;

@@ -978,14 +978,21 @@ while	(1)
 		status[0] = (GPIO_SDCARD_present()?('c'):('-'));
 		status[1] = (disk_status(0)?('-'):('M'));
 		status[2] = ((SDCard_next_wsec>=SDCard_MIN_WSEC)?('R'):('-'));
-		status[3] = GPIO_sideband_in();
-		if	( status[3] < 10 ) status[3] += '0'; else status[3] += ('A'-10);
+		int nibble = GPIO_sideband_in();
+		status[3] = '0';
+		if	( nibble & 2 ) status[3] = '1';
+		if	( nibble & 4 ) status[3] = '2';
+		if	( nibble & 8 ) status[3] = '3';
+		// if	( status[3] < 10 ) status[3] += '0'; else status[3] += ('A'-10);
 		status[4] = 0;
 		if	( SDCard_next_wsec > 0 )
 			LOGprint("%s peak %d-%d, %d", status, audio_buf.left_peak >> 16, audio_buf.right_peak >> 16,
 				 (SDCard_next_wsec-SDCard_start_wsec)/64 );
-		else	LOGprint("%s peak %d-%d",     status, audio_buf.left_peak >> 16, audio_buf.right_peak >> 16 );
-
+		else	{
+			LOGprint("%s peak %d-%d",     status, audio_buf.left_peak >> 16, audio_buf.right_peak >> 16 );
+			LOGprint("side bits : %d-%d-%d", audio_buf.side1_his, audio_buf.side2_his, audio_buf.side3_his );
+			audio_buf.side1_his = audio_buf.side2_his = audio_buf.side3_his = 0;
+			}
 		audio_buf.left_peak = audio_buf.right_peak = 0;
 		// static int dma_cnt = 0;
 		// LOGprint("peak %d-%d, ddma %d", audio_buf.left_peak>>16, audio_buf.right_peak>>16, fulli_cnt - dma_cnt ); dma_cnt = fulli_cnt;

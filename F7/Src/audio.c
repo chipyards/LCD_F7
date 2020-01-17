@@ -47,6 +47,10 @@ audio_buf.fifoW = FQHEAD;	 // debut du PING
 audio_buf.iside = 0;
 audio_buf.left_peak = 0;
 audio_buf.right_peak = 0;
+audio_buf.side1_his = 0;
+audio_buf.side2_his = 0;
+audio_buf.side3_his = 0;
+
 
 if	( mic_input )
 	retval = BSP_AUDIO_IN_OUT_Init( INPUT_DEVICE_DIGITAL_MICROPHONE_2,
@@ -111,6 +115,9 @@ else	nibbuf <<= 4;				// big-endian!!
 audio_buf.iside++;
 if	( audio_buf.iside >= (8000/(AQBUF/2)) )
 	audio_buf.iside = 0;
+if	( inbits & 2 ) audio_buf.side1_his++;
+if	( inbits & 4 ) audio_buf.side2_his++;
+if	( inbits & 8 ) audio_buf.side3_his++;
 }
 #endif
 
