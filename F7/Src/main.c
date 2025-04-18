@@ -158,6 +158,31 @@ if	(
 #endif
 // ---------------------- application ----------------------
 
+#ifdef USE_LOGFIFO
+void report_interrupts(void)
+{
+unsigned int i, p;
+p = __NVIC_GetPriorityGrouping();
+LOGprint("priority grouping %d", p );
+// special systick
+i = -1;
+if	(  SysTick->CTRL & SysTick_CTRL_TICKINT_Msk )
+	{
+	p = __NVIC_GetPriority(i);
+	LOGprint("int #%2d, pri %d", i, p );
+	}
+// tous les autres
+for	( i = 0; i <=  97; ++i )
+	{
+	if	( __NVIC_GetEnableIRQ(i) )
+		{
+		p = __NVIC_GetPriority(i);
+		LOGprint("int #%2d, pri %d", i, p );
+		}
+	}
+}
+#endif
+
 // trace reticule
 void draw_reticle( int x, int y )
 {
@@ -507,6 +532,7 @@ create_menu();
 
 #ifdef USE_TRANSCRIPT
 transcript_init( &JFont16n, SCROLL_ZONE_X0, SCROLL_ZONE_DX );
+report_interrupts();
 #else
 #ifdef USE_LOGFIFO
 logfifo_init();
