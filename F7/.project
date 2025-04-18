@@ -170,30 +170,5 @@
 			<type>1</type>
 			<location>C:/STM32/CubeF7/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.c</location>
 		</link>
-		<link>
-			<name>Middlewares/FatFs/Core/ff.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/ff.c</location>
-		</link>
-		<link>
-			<name>Middlewares/FatFs/Option/syscall.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/option/syscall.c</location>
-		</link>
-		<link>
-			<name>Middlewares/FatFs/Core/diskio.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/diskio.c</location>
-		</link>
-		<link>
-			<name>Middlewares/FatFs/Core/ff_gen_drv.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c</location>
-		</link>
-		<link>
-			<name>Middlewares/FatFs/Option/unicode.c</name>
-			<type>1</type>
-			<location>C:/STM32/CubeF7/Middlewares/Third_Party/FatFs/src/option/unicode.c</location>
-		</link>
 	</linkedResources>
 </projectDescription>

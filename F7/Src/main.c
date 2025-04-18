@@ -65,7 +65,7 @@ int kmenu = 0;
 #ifdef LEFT_FIX
 #define LEFT_BURG	// justification du burger dans la zone fix
 #define FIX_ZONE_X0 	0
-#define FIX_ZONE_DX	180
+#define FIX_ZONE_DX	60	// 180
 #define SCROLL_ZONE_X0	FIX_ZONE_DX
 #define SCROLL_ZONE_DX	(LCD_DX-FIX_ZONE_DX)
 #else
@@ -80,20 +80,12 @@ int kmenu = 0;
 #define YDATE 180	// sommet des lettres
 #define YHOUR 220
 
-#define MBURG 12	// marge burger
+#define MBURG 8		// marge burger
 #define WBURG 50	// taille burger (w ou h) pour clic
 
 #ifdef FLASH_THE_FONTS
 int flash_bytes = 0;
 int flash_errs = 0;
-#endif
-
-#ifdef USE_SDCARD
-#include "ff_gen_drv.h"
-#include "sd_diskio.h"
-FATFS SDFatFs;  /* File system object for SD card logical drive */
-FIL MyFile;     /* File object */
-char SDPath[4]; /* SD card logical drive path */
 #endif
 
 // ----------------------  Interrupts ----------------------
@@ -103,69 +95,68 @@ void SysTick_Handler(void)
   HAL_IncTick();
 }
 
-// ---------------------- application ----------------------
+#ifdef USE_UART6
+/* RX : necessite USE_LOGFIFO
+	- les messages recus sur UART6 (termines par \n) sont envoyes a LOGFIFO (sans \n) pour affichage,
+	  et dupliques sur CDC (avec \n ajoute)
+	- les messages de plus de trans.qcharvis chars sont coupes proprement
+	  (ils sont continues sur une ligne supplementaire ou pluieurs)
+   TX : si ( tx6index == -1 ), remplir le buffer sans deborder et enable TX interrupt
+   (demo : message periodiques de timestamp)
+   NOTE sur thread-safety :
+   	USART6_IRQHandler appelle LOGline(), qui peut appeler UART1_TX_INT_enable(),
+   	alors si UART1 est prioritaire le handler de UART6 va etre interrompu (sans de danger evident)
+*/
+char tx6buf[64];
+volatile int tx6index = -1;	// -1 <==> buffer available, fill it, zero terminated, then enable TX interrupt
+char rx6buf[64];	// buffer size doit etre > trans.qcharvis (actuellement 42)
+volatile int rx6index = 0;
 
-#ifdef USE_SDCARD
-#define CRC_POLY 0xEDB88320	// polynome de zlib, zip et ethernet
-static unsigned int crc_table[256];
-// The table is simply the CRC of all possible eight bit values.
-static void make_crc_table()
+void USART6_IRQHandler( void )
 {
-unsigned int c, n, k;
-for ( n = 0; n < 256; n++ )
-    {
-    c = n;
-    for ( k = 0; k < 8; k++ )
-        c = c & 1 ? CRC_POLY ^ (c >> 1) : c >> 1;
-    crc_table[n] = c;
-    }
-}
-// cumuler le calcul du CRC
-// initialiser avec :	crc = 0xffffffff;
-// finir avec :		crc ^= 0xffffffff;
-static void icrc32( const unsigned char *buf, int len, unsigned int * crc )
-{
-do	{
-	*crc = crc_table[((*crc) ^ (*buf++)) & 0xff] ^ ((*crc) >> 8);
-	} while (--len);
-}
-// random file with CRC - size is in bytes
-// rend la duree en s, ou <0 si erreur
-#define QBUF 32768
-static int write_test_file( unsigned int size, const char * path, unsigned int * crc )
-{
-unsigned char wbuf[QBUF];
-unsigned int tstart, tstop;
-unsigned int cnt, wcnt;
-make_crc_table();
-*crc = 0xffffffff;
-jrtc_get_day_time( &daytime ); tstart = daytime.ss + 60 * daytime.mn;
-if	( f_open( &MyFile, path, FA_CREATE_ALWAYS | FA_WRITE ) )
-	return -1;
-while	( size )
+if	(
+	( LL_USART_IsActiveFlag_TXE( USART6 ) ) &&
+	( LL_USART_IsEnabledIT_TXE( USART6 ) )
+	)
 	{
-	cnt = 0;
-	while	( ( size ) && ( cnt < QBUF ) )
+	char c = tx6buf[tx6index++];
+	if	( ( c ) && ( tx6index <= sizeof(tx6buf) ) )
 		{
-		wbuf[cnt] = rand();
-		--size; ++cnt;
+		LL_USART_TransmitData8( USART6, c );
 		}
-	icrc32( wbuf, cnt, crc );
-	if	( f_write( &MyFile, wbuf, cnt, &wcnt ) )
-		return -2;
-	if	( wcnt != cnt )
-		return -3;
+	else	{
+		UART6_TX_INT_disable();
+		tx6index = -1;		// unlock
+		}
 	}
-*crc ^= 0xffffffff;
-// fermer
-f_close(&MyFile);
-jrtc_get_day_time( &daytime ); tstop = daytime.ss + 60 * daytime.mn;
-tstop -= tstart;
-if	( tstop < 0 )
-	tstop += 3600;
-return tstop;
+if	(
+	( LL_USART_IsActiveFlag_RXNE( USART6 ) ) &&
+	( LL_USART_IsEnabledIT_RXNE( USART6 ) )
+	)
+	{
+	char c = LL_USART_ReceiveData8( USART6 );
+	if	( rx6index >= trans.qcharvis )    // ligne pleine
+		{
+		rx6buf[rx6index] = 0;   // usual terminator for a C string
+		LOGline( rx6buf );
+		rx6index = 0;
+		if	( c > ' ' )
+			rx6buf[rx6index++] = c;	// save c for next log line !
+		}
+	else if	( c == 10 )		// line terminator
+          	{
+		rx6buf[rx6index] = 0;   // usual terminator for a C string
+		if	( rx6index )
+			LOGline( rx6buf );
+		rx6index = 0;		// get ready for next message
+		}
+	else	{
+        	rx6buf[rx6index++] = c;
+		}
+	}
 }
 #endif
+// ---------------------- application ----------------------
 
 // trace reticule
 void draw_reticle( int x, int y )
@@ -220,7 +211,7 @@ switch	( flag )
 		show_flags = LOGO_FLAG;
 	}
 #ifdef USE_TIME_DATE
-show_flags |= ( DATE_FLAG | HOUR_FLAG );
+// show_flags |= ( DATE_FLAG | HOUR_FLAG );
 #endif
 unscroll();
 }
@@ -271,12 +262,12 @@ if	( show_flags & ( LOGO_FLAG | DATE_FLAG | HOUR_FLAG | LOCPIX_FLAG ) )
 	}
 if	( show_flags & LOGO_FLAG )
 	{
-	snprintf( tbuf, sizeof(tbuf), "<" );		// logo, centre
 	GC.vfont = &JVFont36n;
-	w = jlcd_vtext_dx( tbuf );
-	x = xc - ( w / 2 );
-	y = YLOGO;
-	jlcd_vtext( x, y, tbuf );
+	//snprintf( tbuf, sizeof(tbuf), "<" );		// logo, centre
+	//w = jlcd_vtext_dx( tbuf );
+	//x = xc - ( w / 2 );
+	//y = YLOGO;
+	//jlcd_vtext( x, y, tbuf );
 	snprintf( tbuf, sizeof(tbuf), "=" );		// burger, cale au bord
 	w = jlcd_vtext_dx( tbuf );
 	#ifdef LEFT_BURG
@@ -503,6 +494,10 @@ BSP_PB_Init( BUTTON_KEY, BUTTON_MODE_GPIO );
 #ifdef USE_UART1
 CDC_init();
 #endif
+#ifdef USE_UART6
+UART6_init(38400);
+GPIO_config_uart6();
+#endif
 
 idrag_init();
 idrag.yobjmax = 0;
@@ -682,9 +677,15 @@ while	(1)
 		} // if	TS_State.touchDetected 1, 2 ou 0
 	jrtc_get_day_time( &daytime );
 	if	( old_second != daytime.day_seconds )
-		{					// traitement cadence a la seconde
+		{	// traitement cadence a la seconde
+		#ifdef USE_UART6
+		snprintf( tx6buf, sizeof(tx6buf), "-> %02d:%02d:%02d\n", daytime.hh, daytime.mn, daytime.ss );
+		tx6index = 0;
+		UART6_TX_INT_enable();
+		#else
 		#ifdef USE_LOGFIFO
 		LOGprint("-> %02d:%02d:%02d", daytime.hh, daytime.mn, daytime.ss );
+		#endif
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
@@ -708,97 +709,9 @@ while	(1)
 	int c = CDC_getcmd();
 	if	( c > 0 )
 		{
-		#ifdef USE_SDCARD
-		switch	( c )
-			{
-			case 'm' :	// linker le driver (connection soft, n'aborde pas le HW)
-				if	( FATFS_LinkDriver(&SD_Driver, SDPath) )
-					LOGprint("failed : FATFS_LinkDriver");
-				else	{
-					// monter le FS
-					if	( f_mount( &SDFatFs, (TCHAR const*)SDPath, 0) )
-						LOGprint("Failed : f_mount");
-					else	LOGprint("Ok : f_mount {%s}", SDPath );
-					}
-			break;
-			case 'r' :	// ouvrir fichier en lecture
-				if	( f_open( &MyFile, "DEMO.TXT", FA_READ ) )
-					LOGprint("Failed : f_open r DEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open r DEMO.TXT");
-					// lire 1 buffer
-					unsigned int bytesread = 0; char tbuf[64];
-					if	( f_read( &MyFile, tbuf, sizeof(tbuf), &bytesread ) )
-						LOGprint("Failed : f_read");
-					else	{
-						if	( bytesread < sizeof(tbuf) )
-							tbuf[bytesread] = 0;
-						else	tbuf[sizeof(tbuf)-1] = 0;
-						LOGprint("Ok : f_read %d bytes {%s}", bytesread, tbuf );
-						}
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case 'w' :	// ouvrir fichier en ecriture
-				if	( f_open( &MyFile, "WEMO.TXT", FA_CREATE_ALWAYS | FA_WRITE ) )
-					LOGprint("Failed : f_open w WEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open w WEMO.TXT");
-					// ecrire un peu
-					unsigned int byteswritten = 0; const char wbuf[] = "One Love, One Heart";
-					// N.B. ne pas ecrire le NULL dans le fichier ==> sizeof(wbuf)-1
-					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						LOGprint("Failed : f_write");
-					else	LOGprint("Ok : f_write %d bytes", byteswritten );
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case 'a' :	// ouvrir fichier en append
-				if	( f_open( &MyFile, "WEMO.TXT", FA_OPEN_APPEND | FA_WRITE ) )
-					LOGprint("Failed : f_open a WEMO.TXT");
-				else	{
-					LOGprint("Ok : f_open a WEMO.TXT");
-
-					// ecrire un peu
-					unsigned int byteswritten = 0; const char wbuf[] = " !";
-					if	( f_write( &MyFile, wbuf, sizeof(wbuf)-1, &byteswritten ) )
-						LOGprint("Failed : f_write");
-					else	LOGprint("Ok : f_write %d bytes", byteswritten );
-					// fermer
-					f_close(&MyFile);
-					}
-			break;
-			case '1' :	// creer un fichier de test
-			case '2' :
-			case '3' :
-			case '4' :
-			case '5' :
-			case '6' :
-			case '7' :
-			case '8' :
-			case '9' :
-				{
-				unsigned int retval, crc, size;
-				char fnam[32];
-				size = c - '0';
-				snprintf( fnam, sizeof(fnam), "test%d00M.bin", size );
-				size *= 100000000;
-				retval = write_test_file( size, fnam, &crc );
-				if	( retval < 0 )
-					LOGprint("Failed : write %s : code %d", fnam, retval );
-				else	LOGprint("Ok : write %s in %d s, crc %08X", fnam, retval, crc );
-				}
-			break;
-			default :
-				LOGprint("cmd '%c'", c );
-			} // switch c
-		#else
 		LOGprint("cmd '%c'", c );
 		if	( c == '0' )
 			LOGprint("0123456789\n012345\n678901234567890123456789");
-		#endif
 		}
 	// auto-start de l'UART tx interrupt
 	//if	( logfifo.rda != logfifo.wra )
