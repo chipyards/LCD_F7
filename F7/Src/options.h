@@ -5,16 +5,23 @@
 #endif
 
 // #define GREEN_CPU		// sleep dans main loop
+#define USE_UART6	// CN4.D1 = PC6 = UART6 TX, CN4.D0 = PC7 = UART6 RX
 
-/** modules optionnels du display **/
+// UART1 = CDC
+//	Rx : commandes de 1 char
+//	Tx :
+//		si USE_CDC_PRINT : utiliser CDC_print() style printf
+//		sinon : duplique chaque ligne de LOGFIFO
 #define USE_UART1		// CDC vers PC via ST-Link
-#define USE_LOGFIFO		// fifo forwardable vers transcript et/ou CDC
+
+/** modules optionnels du display
+    (note : LOGFIFO peut exister sans TRANSCRIPT, alors sortie vers UART1 (CDC) sauf si USE_CDC_PRINT **/
+#define USE_LOGFIFO		// fifo forwardable vers transcript, avec copie sur CDC sauf si USE_CDC_PRINT
 #define USE_TRANSCRIPT		// scrollable transcript zone, necessite LOGFIFO
+//#define USE_CDC_PRINT		// indep. de LOGFIFO, simple buffer non-circulaire, controle de flux possible par blocage
 #define USE_DEMO		// demo des fonts
 #define USE_TIME_DATE		// affichage de l'heure
 #define USE_PARAM		// demo de page de parametres ajustables
-#define USE_UART6	// CN4.D1 = PC6 = UART6 TX, CN4.D0 = PC7 = UART6 RX
-
 // lateralite
 #define LEFT_FIX
 

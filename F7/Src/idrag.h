@@ -13,12 +13,24 @@
 #define MINV		(1<<(LOG_KVEL-4))	// 1/16 pix par iteration	
 #define VYSLEW		(1<<9)
 
+/* IDRAG controle le scroll vertical d'un objet ou "page"
+   en faisant varier yobj entre les butees yobjmin et yobjmax.
+   RAPPEL : LCD : y origine en haut, y croit vers le bas
+	* normalement l'origine de la page est son top, alors :
+		yobjmax = 0 <==> origine de la page au top de la fenetre
+		yobjmin < 0
+	* yobj < 0 : la page est scrollee vers le haut
+	* yobj = yobjmin : le bas de la page est visible
+   Les butees sont fixees par l'appli par ecriture directe dans la struct idrag
+   en general yobjmin = LCD_DY - hauteur_de_la_page;
+ */
+
 // le contexte idrag
 typedef struct {    
 int anchy;	// ancrage du curseur sur l'objet en cours de dragage
 int yobj;	// position de l'origine de l'objet
-int yobjmin;	// debattement ou (butees pour Yobj)
-int yobjmax;
+int yobjmin;	// yobj pour que le bas de la page soit visible
+int yobjmax;	// yobj pour que le top de la page soit visible
 int oldy;
 int oldt;
 int vy;		// vitesse

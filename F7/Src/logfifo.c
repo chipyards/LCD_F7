@@ -44,8 +44,11 @@ for	( aca = 0; aca < LFIFOLL; ++aca )
 	}
 logfifo.wri = ( logfifo.wri + 1 ) % LFIFOQL;	// index prochaine ligne
 logfifo.wra = logfifo.wri * LFIFOLL;		// debut prochaine ligne
+// duplication vers CDC, sauf si USE_CDC_PRINT
 #ifdef USE_UART1
-UART1_TX_INT_enable();
+#ifndef USE_CDC_PRINT
+UART1_TX_INT_enable();	// cf USART1_IRQHandler() qui lit dans logfifo directement
+#endif
 #endif
 }
 

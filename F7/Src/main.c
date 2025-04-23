@@ -158,9 +158,30 @@ if	(
 #endif
 // ---------------------- application ----------------------
 
-#ifdef USE_LOGFIFO
 void report_interrupts(void)
 {
+#ifdef USE_CDC_PRINT
+unsigned int i, p;
+p = __NVIC_GetPriorityGrouping();
+while (CDC_print("priority grouping %d\n", p )) {};
+// special systick
+i = -1;
+if	(  SysTick->CTRL & SysTick_CTRL_TICKINT_Msk )
+	{
+	p = __NVIC_GetPriority(i);
+	while (CDC_print("int #%2d, pri %d\n", i, p )) {};
+	}
+// tous les autres
+for	( i = 0; i <=  97; ++i )
+	{
+	if	( __NVIC_GetEnableIRQ(i) )
+		{
+		p = __NVIC_GetPriority(i);
+		while (CDC_print("int #%2d, pri %d\n", i, p )) {};
+		}
+	}
+#else
+#ifdef USE_LOGFIFO
 unsigned int i, p;
 p = __NVIC_GetPriorityGrouping();
 LOGprint("priority grouping %d", p );
@@ -180,8 +201,10 @@ for	( i = 0; i <=  97; ++i )
 		LOGprint("int #%2d, pri %d", i, p );
 		}
 	}
-}
 #endif
+#endif
+}
+
 
 // trace reticule
 void draw_reticle( int x, int y )
@@ -194,13 +217,16 @@ jlcd_vline( x, 0, LCD_DY );
 // mise a jour de idrag.yobjmin et position par defaut
 void unscroll(void)
 {
-idrag.yobj = 0;	//pour presque tous les cas
+idrag.yobj = 0;	// top de la page est visible (presque tous les cas)
 if	( show_flags & MENU_FLAG )
 	idrag.yobjmin = - menu.ty;
 else
 #ifdef USE_TRANSCRIPT
 if	( show_flags & TRANS_FLAG )
-	{ idrag.yobjmin = LCD_DY - trans.dy; idrag.yobj = idrag.yobjmin; }
+	{
+	idrag.yobjmin = LCD_DY - trans.dy;
+	idrag.yobj = idrag.yobjmin;	// bas de la page, exception !
+	}
 else	
 #endif
 #ifdef USE_PARAM
@@ -737,7 +763,7 @@ while	(1)
 		{
 		LOGprint("cmd '%c'", c );
 		if	( c == '0' )
-			LOGprint("0123456789\n012345\n678901234567890123456789");
+			LOGprint("0123456789\n012345\n67890123456789012345678901");
 		}
 	// auto-start de l'UART tx interrupt
 	//if	( logfifo.rda != logfifo.wra )

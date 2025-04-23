@@ -7,6 +7,7 @@
 #include "jlcd.h"
 #include "logfifo.h"
 #include "trans.h"
+#include "uarts.h"
 
 // contexte global (singleton)
 TRANStype trans;
@@ -17,7 +18,7 @@ int transcript_init( const JFONT * lafont, int x0, int dx )
 trans.x0 = x0;
 trans.dx = dx;
 trans.qcharvis = dx / lafont->dx;	// caracteres imprimables par ligne
-trans.qlinvis = ( LCD_DY / lafont->dy ) + 1;	// nombre de lignes visibles
+trans.qlinvis = LCD_DY / lafont->dy;	// nombre de lignes visibles
 trans.font = lafont;
 trans.dy = MTOP + MBOT + LFIFOQL * lafont->dy;
 trans.last_ypos = 0;
@@ -43,9 +44,12 @@ trans.last_ypos = ypos;
 i0 = ( - ypos - MTOP ) / trans.font->dy;
 if	( i0 < 0 )
 	i0 = 0;
-i1 = i0 + trans.qlinvis;
+i1 = i0 + trans.qlinvis + 1; // + 1 pour inclure les lignes partiellement visibles
 if	( i1 > LFIFOQL )
 	i1 = LFIFOQL;
+
+// elucidation de la magie...
+/// CDC_print("tdw(%d) %d %d %d %d\n", ypos, i0, i1, ( i0 + logfifo.wri ) % LFIFOQL, ( i1 + logfifo.wri ) % LFIFOQL );
 
 // obligatoire pour toute page utilisant des fonctions _yclip
 GC.ytop = 0;
@@ -61,6 +65,9 @@ GC.text_color = ARGB_GREEN;
 GC.font = trans.font;
 for	( i = i0; i < i1; ++i )
 	{
+	// explication : avec i = 0 (top de la page ) on a j = logfifo.wri, soit la PROCHAINE ligne a ecrire dans le fifo
+	// donc aussi la plus ancienne si le fifo est rempli
+	// alors avec i = ( LFIFOQL - 1 ), tout en bas de la page, on est a l'autre bout du fifo donc sur la PLUS RECENTE ligne
 	j = ( i + logfifo.wri ) % LFIFOQL;
 	ali = j * LFIFOLL;
 	// jlcd_yclip_text( 0, ys, trans.circ + a ); <-- on deroule ça
@@ -80,7 +87,7 @@ for	( i = i0; i < i1; ++i )
 			}
 		}
 	ys += GC.font->dy;
-	ali += LFIFOLL;
+	// ali += LFIFOLL;
 	}
 }
 #endif

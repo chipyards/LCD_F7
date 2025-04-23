@@ -4,8 +4,10 @@
 // TX : un buffer de message avec lock
 // RX : un byte de commande
 typedef struct {
+#ifdef USE_CDC_PRINT
 volatile char TXbuf[QTX1];
 volatile int TXindex;
+#endif
 volatile int RXbyte;
 } UART1type;
 

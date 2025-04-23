@@ -26,7 +26,19 @@ if	(
 	)
 	{
 	int c;
-	#ifdef USE_LOGFIFO
+
+	#ifdef USE_CDC_PRINT
+	c = CDC.TXbuf[CDC.TXindex++];
+	if	( ( c ) && ( CDC.TXindex <= QTX1 ) )
+		{
+		LL_USART_TransmitData8( USART1, c );
+		}
+	else	{
+		UART1_TX_INT_disable();
+		CDC.TXindex = -1;		// unlock
+		}
+	#else
+	#ifdef USE_LOGFIFO		// echo de chaque nouvelle ligne de LOGFIFO, cf LOGline() dans logfifo.c
 	c = logfifo.circ[logfifo.rda];
 	if	( logfifo.rda == logfifo.wra )
 		{			// rien a transmettre, attendre
@@ -34,7 +46,7 @@ if	(
 		}
 	else if	( c == 0 )
 		{
-		LL_USART_TransmitData8( USART1, '\n' );
+		LL_USART_TransmitData8( USART1, '\n' );		// ajouter \n qui n'est pas dans logfifo
 		unsigned int rda;	// on doit calculer
 		rda = logfifo.rda;	// l'adresse du debut de la ligne suivante
 		rda /= LFIFOLL;
@@ -47,15 +59,8 @@ if	(
 		++logfifo.rda;
 		}
 	#else
-	c = CDC.TXbuf[CDC.TXindex++];
-	if	( ( c ) && ( CDC.TXindex <= QTX1 ) )
-		{
-		LL_USART_TransmitData8( USART1, c );
-		}
-	else	{
-		UART1_TX_INT_disable();
-		CDC.TXindex = -1;		// unlock
-		}
+	UART1_TX_INT_disable();
+	#endif
 	#endif
 	}
 if	(
@@ -70,18 +75,19 @@ if	(
 // constructeur
 void CDC_init()
 {
+#ifdef USE_CDC_PRINT
 CDC.TXindex = -1;		// unlock
+#endif
 CDC.RXbyte = -1;		// empty
 GPIO_config_uart1();
-UART1_init(9600);
+UART1_init(38400);
 }
 
 // envoyer une ligne de texte formattee
 // retourne 1 si renoncement pour cause de transmission en cours
-#ifdef USE_LOGFIFO
-#else
 int CDC_print( const char *fmt, ... )
 {
+#ifdef USE_CDC_PRINT
 va_list  argptr;
 if	( CDC.TXindex >= 0 )
 	return 1;		// transmetteur occupe..
@@ -90,9 +96,9 @@ vsnprintf( (char *)CDC.TXbuf, sizeof(CDC.TXbuf), fmt, argptr );
 va_end( argptr );
 CDC.TXindex = 0;
 UART1_TX_INT_enable();
+#endif
 return 0;
 }
-#endif
 
 // lire une commande
 int CDC_getcmd()
