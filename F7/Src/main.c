@@ -33,16 +33,7 @@ void ETH_PhyEnterPowerDownMode(void);
 #define MENU_FLAG	4
 #define PARAM_FLAG	8
 
-#define LOGO_FLAG	0x10	// zone fixe
-#define DATE_FLAG	0x20
-#define HOUR_FLAG	0x40
-
-#define MN_ADJ_FLAG	0x100	// ajustements
-#define HH_ADJ_FLAG	0x200
-#define WD_ADJ_FLAG	0x1000
-#define MD_ADJ_FLAG	0x2000
-#define MM_ADJ_FLAG	0x4000
-#define TIME_ADJ_FLAGS ( HH_ADJ_FLAG | MN_ADJ_FLAG | WD_ADJ_FLAG | MD_ADJ_FLAG | MM_ADJ_FLAG )
+#define BURG_FLAG	0x10	// zone fixe
 
 #define LOCPIX_FLAG	0x10000
 
@@ -250,20 +241,17 @@ switch	( flag )
 		show_flags |= MENU_FLAG;
 		break;
 	case TRANS_FLAG :
-		show_flags = TRANS_FLAG | LOGO_FLAG;
+		show_flags = TRANS_FLAG | BURG_FLAG;
 		break;
 	case PARAM_FLAG :
-		show_flags = PARAM_FLAG | LOGO_FLAG;
+		show_flags = PARAM_FLAG | BURG_FLAG;
 		break;
 	case DEMO_FLAG :
-		show_flags = DEMO_FLAG | LOGO_FLAG;
+		show_flags = DEMO_FLAG | BURG_FLAG;
 		break;
 	default:
-		show_flags = LOGO_FLAG;
+		show_flags = BURG_FLAG;
 	}
-#ifdef USE_TIME_DATE
-// show_flags |= ( DATE_FLAG | HOUR_FLAG );
-#endif
 unscroll();
 }
 
@@ -301,73 +289,37 @@ menu_add( LOCPIX_FLAG, "LOCPIX" );
 // toutes les operations de trace
 void repaint( TS_StateTypeDef * touch )
 {
-int xc, x, y, w;
+int x, y;
 char tbuf[32];
 __HAL_RCC_DMA2D_CLK_ENABLE();
-// zone FIX ( burger, logo, heure et date ) =====================================
-if	( show_flags & ( LOGO_FLAG | DATE_FLAG | HOUR_FLAG | LOCPIX_FLAG ) )
-	{	// preparer affichage d'elements centres zone FIX (no scroll)
-	xc = FIX_ZONE_X0 + ( FIX_ZONE_DX / 2 );	// le centre
+// zone FIX no-scroll ( burger, logo, heure et date ) ===========================
+if	( show_flags & ( BURG_FLAG | LOCPIX_FLAG ) )
+	{	// preparer affichage
 	GC.fill_color = ARGB_WHITE;
 	jlcd_rect_fill( FIX_ZONE_X0 + 1, 0, FIX_ZONE_DX - 1, LCD_DY );
 	}
-if	( show_flags & LOGO_FLAG )
+if	( show_flags & BURG_FLAG )
 	{
 	GC.vfont = &JVFont36n;
 	//snprintf( tbuf, sizeof(tbuf), "<" );		// logo, centre
-	//w = jlcd_vtext_dx( tbuf );
+	//int xc = FIX_ZONE_X0 + ( FIX_ZONE_DX / 2 );	// le centre
+	//int w = jlcd_vtext_dx( tbuf );
 	//x = xc - ( w / 2 );
 	//y = YLOGO;
 	//jlcd_vtext( x, y, tbuf );
 	snprintf( tbuf, sizeof(tbuf), "=" );		// burger, cale au bord
-	w = jlcd_vtext_dx( tbuf );
 	#ifdef LEFT_BURG
 	x = FIX_ZONE_X0 + MBURG;
 	#else
+	int w = jlcd_vtext_dx( tbuf );
 	x = FIX_ZONE_X0 + FIX_ZONE_DX - w - MBURG;
 	#endif
 	y = MBURG;
 	jlcd_vtext( x, y, tbuf );
 	}
-#ifdef USE_TIME_DATE
-if	( show_flags & DATE_FLAG )
-	{			// date
-	y = YDATE;
-	tbuf[0] = ';' + daytime.wd;
-	snprintf( tbuf+1, sizeof(tbuf), "  %02d:%02d", daytime.md, daytime.mm );
-	GC.vfont = &JVFont26s;
-	w = jlcd_vtext_dx( tbuf );
-	x = xc - ( w / 2 );
-	jlcd_vtext( x, y, tbuf );
-	}
-if	( show_flags & HOUR_FLAG )
-	{			// heure
-	y = YHOUR; 
-	snprintf( tbuf, sizeof(tbuf), "%02d:%02d", daytime.hh, daytime.mn );
-	// calcul largeur pour centrage
-	GC.vfont = &JVFont36n;
-	w = jlcd_vtext_dx( tbuf ) + GC.vfont->sx;
-	GC.vfont = &JVFont19n;
-	w += jlcd_vtext_dx( ":00" );
-	// affichage hh:mn:ss
-	GC.vfont = &JVFont36n;
-	x = xc - ( w / 2 );
-	x = jlcd_vtext( x, y, tbuf );
-	y += (36 - 19);	// compenser difference de hauteur
-	snprintf( tbuf, sizeof(tbuf), ":%02d", daytime.ss );
-	GC.vfont = &JVFont19n;
-	jlcd_vtext( x, y, tbuf );
-	}			// overlay d'ajustement
-if	( show_flags & TIME_ADJ_FLAGS )
-	adju_draw( idrag.yobj );
-#endif
 // zone SCROLL ==================================================================
 if	( show_flags & MENU_FLAG )	// le menu scrollatif (prempte les autres)
-	{
-	if	( show_flags & TIME_ADJ_FLAGS )
-		kmenu = menu_draw( menu.last_ypos );
-	else	kmenu = menu_draw( idrag.yobj );
-	}
+	kmenu = menu_draw( idrag.yobj );
 else
 #ifdef USE_DEMO
 if	( show_flags & DEMO_FLAG )	// page de demo scrollable
@@ -376,20 +328,12 @@ else
 #endif
 #ifdef USE_TRANSCRIPT
 if	( show_flags & TRANS_FLAG )	// page de transcript scrollable
-	{
-	if	( show_flags & TIME_ADJ_FLAGS )
-		transdraw( trans.last_ypos );
-	else	transdraw( idrag.yobj );
-	}
+	transdraw( idrag.yobj );
 else
 #endif
 #ifdef USE_PARAM
 if	( show_flags & PARAM_FLAG )	// page de parametres scrollable
-	{
-	if	( show_flags & TIME_ADJ_FLAGS )
-		param_draw( para.last_ypos );
-	else	param_draw( idrag.yobj );
-	}
+	param_draw( idrag.yobj );
 else
 #endif
 	{				// remplissage par defaut
@@ -485,6 +429,39 @@ if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
 	#else
 	jlcd_panel_off();
 	#endif
+	}
+}
+
+#ifdef USE_PARAM
+// interpreteur d'edition de parametre
+void param_handler( int item, int val )
+{
+switch	( item )
+	{
+	case 0 :
+		LOGprint("out vol. %d", val ); break;
+	case 1 :
+		LOGprint("line_in vol. L %d", val ); break;
+	case 2 :
+		LOGprint("line_in vol. R %d", val ); break;
+	case 3 :
+		LOGprint("session # %d", val ); break;
+	case 4 :
+		LOGprint("try %d", val );	break;
+	}
+}
+#endif
+
+// interpreteur de commandes sur 1 char
+static void cmd_handler( int c )
+{
+switch	( c )
+	{
+	case '0' :
+		LOGprint("0123456789\n012345\n67890123456789012345678901");
+		break;
+	default :
+		LOGprint("cmd '%c'", c );
 	}
 }
 
@@ -591,14 +568,12 @@ while	(1)
 			}
 		else	{
 			++touch_occur_cnt;
-			if	(
-				( show_flags & TIME_ADJ_FLAGS )
-				#ifdef USE_PARAM
-				|| ( ( show_flags & PARAM_FLAG ) && ( para.editing ) )
-				#endif
-				)
+			#ifdef USE_PARAM
+			if	( ( show_flags & PARAM_FLAG ) && ( para.editing ) )
 				idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );	// laisser courir
-			else if	(
+			else
+			#endif
+			if	(
 				( TS_State.touchX[0] > FIX_ZONE_X0 ) &&
 				( TS_State.touchX[0] < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
 				)
@@ -623,57 +598,7 @@ while	(1)
 		old_touch_cnt = 1;
 		}
 	else if	( TS_State.touchDetected == 2 )
-		{	// double touch :
-		int x2 = TS_State.touchX[1];
-		int y2 = TS_State.touchY[1];
-		#ifdef USE_TIME_DATE
-		if	(				// gerer l'entree dans un ajustement horaire
-			( old_touch_cnt == 1 ) &&	// one_shot
-			( ( show_flags & TIME_ADJ_FLAGS ) == 0 ) &&
-			( ( show_flags & PARAM_FLAG ) == 0 ) &&
-			( x2 > FIX_ZONE_X0 ) &&
-			( x2 < ( FIX_ZONE_X0 + FIX_ZONE_DX ) )
-			)
-			{
-			if	( y2 > ( YHOUR - 10 ) )
-				{
-				if	( x2 < ( FIX_ZONE_X0 + 70 ) )
-					{
-					show_flags |= ( HH_ADJ_FLAG | HOUR_FLAG );
-					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+20, YHOUR+18, 44, 60, 0, 24, daytime.hh );
-					}
-				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
-					{
-					show_flags |= ( MN_ADJ_FLAG | HOUR_FLAG );
-					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+79, YHOUR+18, 44, 60, 0, 60, daytime.mn );
-					}
-				// else	rien
-				}
-			else if	( y2 > ( YDATE - 10 ) )
-				{
-				if	( x2 < ( FIX_ZONE_X0 + 90 ) )
-					{
-					show_flags |= WD_ADJ_FLAG | DATE_FLAG;
-					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+8, YDATE+14, 85, 60, 0, 5, daytime.wd );
-					}
-				else if	( x2 < ( FIX_ZONE_X0 + 130 ) )
-					{
-					show_flags |= MD_ADJ_FLAG | DATE_FLAG;
-					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+90, YDATE+14, 38, 60, 1, 32, daytime.md );
-					}
-				else	{
-					show_flags |= MM_ADJ_FLAG | DATE_FLAG;
-					idrag.yobj = adju_start( &JFont20, FIX_ZONE_X0+135, YDATE+14, 38, 60, 1, 13, daytime.mm );
-					}
-				}
-			if	( show_flags & TIME_ADJ_FLAGS )		// elements communs a tous les time adjs
-				{
-				idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
-				idrag.touching = 0;		// forcer un nouveau landing
-				}
-			}
-		else
-		#endif
+		{	// double touch : 2 fingers
 		#ifdef USE_PARAM
 		if	( ( old_touch_cnt == 1 ) && ( show_flags & PARAM_FLAG ) && ( para.editing == 0 ) )
 			{
@@ -681,12 +606,10 @@ while	(1)
 			idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
 			idrag.touching = 0;		// forcer un nouveau landing
 			}
-		else
 		#endif
-		{}	// pour le dernier else
-		idrag_event_call( TS_State.touchDetected,
-				  TS_State.touchX[1], TS_State.touchY[1],
-				  GC.ltdc_irq_cnt );
+		int x2 = TS_State.touchX[1];
+		int y2 = TS_State.touchY[1];
+		idrag_event_call( TS_State.touchDetected, x2, y2, GC.ltdc_irq_cnt );
 		paint_flag = 1; last_touch_second = daytime.day_seconds;
 		old_touch_cnt = 2;
 		}
@@ -694,30 +617,12 @@ while	(1)
 		idrag_event_call( 0, 0, 0, GC.ltdc_irq_cnt );
 		if	( old_touch_cnt )
 			{
-			#ifdef USE_TIME_DATE
-			if	( show_flags & TIME_ADJ_FLAGS )
-				{			// sauver resultat ajustement
-				switch	( show_flags & TIME_ADJ_FLAGS )
-					{
-					case HH_ADJ_FLAG: daytime.hh = adj.val; break;
-					case MN_ADJ_FLAG: daytime.mn = adj.val; break;
-					case WD_ADJ_FLAG: daytime.wd = adj.val; break;
-					case MD_ADJ_FLAG: daytime.md = adj.val; break;
-					case MM_ADJ_FLAG: daytime.mm = adj.val; break;
-					}
-				jrtc_set_day_time( &daytime );
-
-				show_flags &= ~TIME_ADJ_FLAGS;		// quitter mode ajust
-				unscroll();
-				paint_flag = 1;
-				}
-			#endif
 			#ifdef USE_PARAM
 			if	( show_flags & PARAM_FLAG )
 				{
 				if	( para.editing )
 					{
-					param_save();
+					param_save();	// enregistrer la valeur et quitter le mode adj
 					unscroll();
 					}
 				paint_flag = 1;
@@ -730,7 +635,7 @@ while	(1)
 	jrtc_get_day_time( &daytime );
 	if	( old_second != daytime.day_seconds )
 		{	// traitement cadence a la seconde
-		#ifdef USE_UART6
+		#ifdef USE_UART6	// emission de message sur UART6 Tx pour tester UART6 Rx avec un bouclage
 		snprintf( tx6buf, sizeof(tx6buf), "-> %02d:%02d:%02d\n", daytime.hh, daytime.mn, daytime.ss );
 		tx6index = 0;
 		UART6_TX_INT_enable();
@@ -756,18 +661,19 @@ while	(1)
 		LTDC->SRCR |= LTDC_SRCR_VBR;
 		}
 
+	#ifdef USE_PARAM
+	{
+	int item = param_scan();
+	if	( item >= 0 )
+		param_handler( item, param_get_val( item ) );
+	}
+	#endif
+
 	#ifdef USE_UART1
-	{			// attention : un seul LOGprint() par commande, car il n'y a pas de queue
+	{
 	int c = CDC_getcmd();
 	if	( c > 0 )
-		{
-		LOGprint("cmd '%c'", c );
-		if	( c == '0' )
-			LOGprint("0123456789\n012345\n67890123456789012345678901");
-		}
-	// auto-start de l'UART tx interrupt
-	//if	( logfifo.rda != logfifo.wra )
-	//	UART1_TX_INT_enable();
+		cmd_handler( c );
 	}
 	#endif
 

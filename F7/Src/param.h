@@ -1,11 +1,14 @@
-// une page de parametres ajustables
-
+/*
+  Une page de parametres ajustables
+  L'ajustement est base sur le double touch (2 doigts)
+*/
 
 typedef struct {
 const char * label;
-int min;
-int max;
-int val;
+int min;	// min inclus
+int max;	// max exclu
+int val;	// >= 0 car adju ne supporte pas les valeurs negatives (FIX ME)
+int changed;
 } PARAMitem;
 
 typedef struct {
@@ -38,5 +41,15 @@ void param_select( int ys );
 // demarrage edition (2eme touch) rend une valeur de ypos pour idrag
 int param_start(void);
 
-// enregistrer la valeur du param en fin d'edition
+// enregistrer la valeur du param en fin d'edition, et quitter le mode adj
 void param_save(void);
+
+// rend l'indice du premier param qui a change, -1 si aucun
+int param_scan(void);
+
+// rend la valeur du param, et le marque lu
+int param_get_val( unsigned int i );
+
+// fixe la valeur du param, et le marque lu
+void param_set_val( unsigned int i, int val );
+

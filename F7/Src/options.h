@@ -20,7 +20,6 @@
 #define USE_TRANSCRIPT		// scrollable transcript zone, necessite LOGFIFO
 //#define USE_CDC_PRINT		// indep. de LOGFIFO, simple buffer non-circulaire, controle de flux possible par blocage
 #define USE_DEMO		// demo des fonts
-#define USE_TIME_DATE		// affichage de l'heure
 #define USE_PARAM		// demo de page de parametres ajustables
 // lateralite
 #define LEFT_FIX
