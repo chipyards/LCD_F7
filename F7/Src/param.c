@@ -10,13 +10,16 @@
 // contexte global : la page decrite en ROM
 PARAMtype para;
 
-PARAMitem lesparams[] = {
-//		min	max	val	chng
-{"vol out",	0,	64,	41,	0 },
-{"vol in L",	0,	52,	11,	0 },
-{"vol in R",	0,	52,	11,	0 },
-{"session #",	0,	30,	0,	0 },
-{"rec on/off",	0,	9,	0,	0 }
+PARAMitem lesparams[] = {	// MIN inclus, MAX exclus
+//			min	max	val	chng
+{"Unscroll Timout",	0,	21,	10,	0 },
+{"demo on/off",		0,	2,	0,	0 },
+{"demo in L",		0,	52,	11,	0 },
+{"demo in R",		0,	52,	11,	0 },
+{"demo #",		0,	30,	0,	0 },
+{"demo 0-255",		0,	256,	128,	0 },
+{"demo +-10",		-10,	11,	0,	0 },
+{"1000 +-10",		990,	1011,	1000,	0 },
 };
 
 // constructeur
@@ -32,7 +35,7 @@ if	( pitchoun < ( ( lafont->dy * 7 ) / 4 ) )	// si trop serre, on devra scroller
 	pitchoun = ( lafont->dy * 7 ) / 4;		// i.e. espace minimum entre les lignes (arbitraire)
 para.pitch = pitchoun;
 para.dy = ( 2 + para.qitem ) * para.pitch; // marges = 1 pitch
-para.xv = para.dx - 5 * lafont->dx;
+para.xv = para.dx - 6 * lafont->dx;
 para.last_ypos = 0;
 para.curitem = 0;
 para.selitem = -1;
@@ -70,8 +73,11 @@ for	( i = 0; i < para.qitem; ++i )
 		GC.text_color = ARGB_RED;
 	else	GC.text_color = ARGB_BLACK;
 	jlcd_yclip_text( xs, ys, para.items[i].label );
-	snprintf( tbuf, sizeof(tbuf), "%d", para.items[i].val );
-	jlcd_yclip_text( xs + para.xv, ys, tbuf );
+	if	( para.editing == 0 )
+		{
+		snprintf( tbuf, sizeof(tbuf), "%d", para.items[i].val );
+		jlcd_yclip_text( xs + para.xv, ys, tbuf );
+		}
 	ys += para.pitch;
 	}
 // overlay
@@ -112,7 +118,7 @@ int is = para.selitem, ypos = 0;
 if	( ( para.editing == 0 ) && ( is >= 0 ) && ( is < para.qitem ) )
 	{
 	ypos = adju_start( para.font, para.x0 + para.xv,
-			para.last_ypos + ( para.pitch * ( 1 + is ) ) + ( para.font->h / 2 ), 44, 60,
+			para.last_ypos + ( para.pitch * ( 1 + is ) ) + ( para.font->h / 2 ), 4, 5,
 			para.items[is].min, para.items[is].max, para.items[para.selitem].val );
 	para.editing = 1;
 	}

@@ -27,7 +27,7 @@ void ETH_PhyEnterPowerDownMode(void);
 
 // ---------------------- contexte global ------------------
 
-// flags d'affichage
+// flags d'affichage pour show_flags
 #define DEMO_FLAG	1	// zone de scroll
 #define TRANS_FLAG	2
 #define MENU_FLAG	4
@@ -37,17 +37,20 @@ void ETH_PhyEnterPowerDownMode(void);
 
 #define LOCPIX_FLAG	0x10000
 
+// N.B. cette appli utilise :
+//	- l'interruption du LTDC (vertical blank) pour cadener la boucle principale
+//	- la RTC, pour les operations cadencees a la seconde
+// Elle ne depend pas de systick, qu'on pourrait deasactiver
 
 int show_flags;			// flags d'affichage
-int shown_day = 0;		// jour de semaine  0 à 4
 int touch_occur_cnt = 0;	// anti-rebond pour single touch
 int old_touch_cnt = 0;		// detection retour de double touch
+int unscroll_timout = 10;	// tempo pour unscrolling auto, en s.
+DAY_TIME daytime;		// le temps lu dans la rtc, utilise pour les tempos "a la seconde"
 
-DAY_TIME daytime;	// le temps sous diverses formes
-
-#define UNSCROLL_TIMOUT 	10	// en s
-#define SHORT_TOUCH_DELAY	3	// en frames
-#define LONG_TOUCH_DELAY	120	// en frames
+#define SHORT_TOUCH_DELAY	3	// en frames de 16ms
+#define MED_TOUCH_DELAY		80	// en frames
+#define LONG_TOUCH_DELAY	200	// en frames
 
 int kmenu = 0;
 
@@ -65,11 +68,6 @@ int kmenu = 0;
 #define FIX_ZONE_X0 	SCROLL_ZONE_DX
 #define FIX_ZONE_DX	(LCD_DX-SCROLL_ZONE_DX)
 #endif
-// Axe Y
-#define YLOGO 100	// sommet
-
-#define YDATE 180	// sommet des lettres
-#define YHOUR 220
 
 #define MBURG 8		// marge burger
 #define WBURG 50	// taille burger (w ou h) pour clic
@@ -369,10 +367,10 @@ else	{
 	// snprintf( tbuf, sizeof(tbuf), "%d", idrag.yobj );
 	#endif
 	}
-if	( tbuf[0] )			// status/debug PROVIZOAR pas clean	
+if	( tbuf[0] )			// blue text sous le hamburger
 	{
 	x = FIX_ZONE_X0 + 12;
-	y = YLOGO - 40;
+	y = WBURG - 20;
 	GC.font = &JFont20; GC.text_color = ARGB_BLUE;
 	jlcd_text( x, y, tbuf );
 	}
@@ -422,7 +420,7 @@ else	{
 // interpreter un long clic dans la zone FIX
 void long_clic_fix_event_call( int x, int y )
 {
-if	( ( y > YLOGO ) && ( y < ( YDATE - 20 ) ) )	// zone logo
+// if	( ( y > ... ) && ( y < ... ) ) )
 	{
 	#ifdef FLASH_THE_FONTS
 	flash_bytes = flash_the_fonts();
@@ -439,15 +437,8 @@ void param_handler( int item, int val )
 switch	( item )
 	{
 	case 0 :
-		LOGprint("out vol. %d", val ); break;
-	case 1 :
-		LOGprint("line_in vol. L %d", val ); break;
-	case 2 :
-		LOGprint("line_in vol. R %d", val ); break;
-	case 3 :
-		LOGprint("session # %d", val ); break;
-	case 4 :
-		LOGprint("try %d", val );	break;
+		unscroll_timout = val;
+		LOGprint("unscroll_timout %d", unscroll_timout ); break;
 	}
 }
 #endif
@@ -589,8 +580,17 @@ while	(1)
 						TS_State.touchX[0], TS_State.touchY[0],
 						GC.ltdc_irq_cnt );
 				#ifdef USE_PARAM
-				if	( ( touch_occur_cnt == SHORT_TOUCH_DELAY ) && ( show_flags & PARAM_FLAG ) )
-					param_select( TS_State.touchY[0] );
+				if	( show_flags & PARAM_FLAG )
+					{
+					if	( touch_occur_cnt == SHORT_TOUCH_DELAY )
+						param_select( TS_State.touchY[0] );
+					if	( ( touch_occur_cnt == MED_TOUCH_DELAY ) && ( para.editing == 0 ) )
+						{
+						idrag.yobj = param_start();	// demarrer l'edition sur le param qui a ete deja selectionne
+						idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
+						idrag.touching = 0;		// forcer un nouveau landing
+						}				// N.B. param_start() a mis para.editing a 1
+					}
 				#endif
 				}
 			}
@@ -605,7 +605,7 @@ while	(1)
 			idrag.yobj = param_start();	// demarrer l'edition sur le param qui a ete deja selectionne
 			idrag.yobjmin = - adj.ty;	// a faire apres adju_start()
 			idrag.touching = 0;		// forcer un nouveau landing
-			}
+			}				// N.B. param_start() a mis para.editing a 1
 		#endif
 		int x2 = TS_State.touchX[1];
 		int y2 = TS_State.touchY[1];
@@ -646,7 +646,7 @@ while	(1)
 		#endif
 		paint_flag = 1;
 		old_second = daytime.day_seconds;
-		if	( daytime.day_seconds > ( last_touch_second + UNSCROLL_TIMOUT ) )
+		if	( ( unscroll_timout ) && ( daytime.day_seconds > ( last_touch_second + unscroll_timout ) ) )
 			unscroll();
 		}
 	

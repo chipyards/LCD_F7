@@ -21,18 +21,19 @@
 ADJUtype adj;
 
 // rend une valeur de ypos initiale pour idrag
-// y0 = position reticule (au mileu du widget) comme cela il reste centre si on change sa hauteur h
-int adju_start( const JFONT * lafont, int x0, int y0, int w, int h, int min, int max, int val )
+// y0 = position reticule (au mileu du widget) comme cela il reste centre si on change sa hauteur th
+// tw et th en caracteres
+int adju_start( const JFONT * lafont, int x0, int y0, int tw, int th, int min, int max, int val )
 {
 adj.font = lafont;
+adj.mx  = 5;
+adj.dx  = adj.mx + adj.font->dx * tw;
+adj.dys = adj.font->dy * th;
+adj.my  = adj.dys/2;
 adj.x0  = x0;
-adj.y0  = y0 - h/2;
-adj.dx  = w;
-adj.dys = h; 
+adj.y0  = y0 - adj.my;	// centrage
 adj.min = min;
 adj.max = max;
-adj.my  = h/2;
-adj.mx  = 5;
 adj.ty = ( adj.max - adj.min - 1 ) * adj.font->dy;
 if	( val < adj.min )
 	val = adj.min;
@@ -47,12 +48,19 @@ return( -adj.font->dy * (val - adj.min) );
 void adju_draw( int ypos )
 {
 int i, xs, ys, y0, y1, val;
-char label[4];
-// elements fixes
-GC.fill_color = ARGB_LIGHTGRAY;	// fond
-jlcd_rect_fill( adj.x0, adj.y0, adj.dx, adj.dys );
+char label[8];
+GC.ytop = adj.y0;
+if	( GC.ytop < 0 ) GC.ytop = 0;
+if	( GC.ytop > LCD_DY ) GC.ytop = LCD_DY;
+GC.ybot = adj.y0 + adj.dys;
+if	( GC.ybot < 0 ) GC.ybot = 0;
+if	( GC.ybot > LCD_DY ) GC.ybot = LCD_DY;
+
+// elements fixes.. dans une page scrollable ! fonctions _yclip obligatoires
+GC.fill_color = ARGB_LIGHTCYAN;	// fond
+jlcd_yclip_rect_fill( adj.x0, adj.y0, adj.dx, adj.dys );
 GC.line_color = ARGB_GRAY;	// index
-jlcd_hline( adj.x0, adj.y0 + adj.my, adj.dx );
+jlcd_yclip_hline( adj.x0, adj.y0 + adj.my, adj.dx );
 
 // elements scrollables : fonctions _yclip obligatoires
 y1 = adj.y0 + adj.my + 3;		// bottom de zone select
@@ -61,27 +69,22 @@ ys = y1 - adj.font->dy/2 + ypos;	// screen coord
 xs = adj.x0 + adj.mx;
 GC.text_color = ARGB_BLACK;
 GC.font = adj.font;
-GC.ytop = adj.y0;
-GC.ybot = adj.y0 + adj.dys;
-val = -1;
+val = adj.val;	// valeur anterieure
 for	( i = adj.min; i < adj.max; ++i )
 	{
 	if	( ( ys >= y0 ) && ( ys < y1 ) )
 		{
 		val = i;
+		if	( val < adj.min )
+			val = adj.min;
+		if	( val >= adj.max )
+			val = adj.max - 1;
+		adj.val = val;
 		GC.text_color = ARGB_RED;
 		}
 	else	GC.text_color = ARGB_BLACK;
 	snprintf( label, sizeof(label), "%d", i );
 	jlcd_yclip_text( xs, ys, label );
 	ys += GC.font->dy;
-	}
-if	( val >= 0 )
-	{
-	if	( val < adj.min )
-		val = adj.min;
-	if	( val >= adj.max )
-		val = adj.max - 1;
-	adj.val = val;
 	}
 }

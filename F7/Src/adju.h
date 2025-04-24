@@ -9,14 +9,15 @@ int dys;	// hauteur visible
 int val;	// derniere valeur observee
 int min;	// valeur min incluse	
 int max;	// valeur max exclue
-int my;		// marge y
+int my;		// milieu y
 int mx;		// marge x
 } ADJUtype;
 
 // contexte global
 extern ADJUtype adj;	// un seul, configurable a chaud
 
-int adju_start( const JFONT * lafont, int x0, int y0, int w, int h, int min, int max, int val );
+// N.B. : tw et th en caracteres
+int adju_start( const JFONT * lafont, int x0, int y0, int tw, int th, int min, int max, int val );
 
 // afficher l'ajustement, rend la valeur selectionnee
 // ou -1 si aucune valeur selectionnee
