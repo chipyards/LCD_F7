@@ -12,13 +12,13 @@ PARAMtype para;
 
 PARAMitem lesparams[] = {	// MIN inclus, MAX exclus
 //			min	max	val	chng
-{"Unscroll Timout",	0,	21,	10,	0 },
-{"demo on/off",		0,	2,	0,	0 },
-{"demo in L",		0,	52,	11,	0 },
-{"demo in R",		0,	52,	11,	0 },
-{"demo #",		0,	30,	0,	0 },
-{"demo 0-255",		0,	256,	128,	0 },
-{"demo +-10",		-10,	11,	0,	0 },
+{"Unscroll Delay 0=disabl",	0,	21,	10,	0 },
+{"idrag min dt",	1,	10,	6,	0 },
+{"dummy on/off",	0,	2,	0,	0 },
+{"dummy in",		0,	52,	11,	0 },
+{"dummy #",		0,	30,	0,	0 },
+{"dummy 0-255",		0,	256,	128,	0 },
+{"dummy +-10",		-10,	11,	0,	0 },
 {"1000 +-10",		990,	1011,	1000,	0 },
 };
 

@@ -7,11 +7,16 @@
 */
 
 /* touch-drag params : base de temps 16 ms (1 frame video) */
-#define MINDT		3	// duree min pour estimation vitesse
-#define LOG_KVEL 	16	// log multiplicateur vitesse
-#define LOG_TAU		4	// constante de temps (log tau)
-#define MINV		(1<<(LOG_KVEL-4))	// 1/16 pix par iteration	
-#define VYSLEW		(1<<9)
+#define MINDT		2	// duree min pour estimation vitesse (en frames)
+#define LOG_KVEL 	16	// log du multiplicateur kvel pour ameliorer la resolution du calcul : v = ( dy * kvel ) / dt
+#define LOG_TAU		5	// constante de temps (log tau)
+#define MINV		(1<<(LOG_KVEL-4))	// vitesse min (en dessous on stop) 1/16 pix par iteration
+#define SQUELCHVY	400000	// vitesse en dessous de laquelle le drift est desactive
+#define RUSHVY		700000	// vitesse au dessus de laquelle le rush est active (drift a la vitese de pointe du drag)
+#define TNODRIFT	30	// duree (en frames) au dela de laquelle le drag a marque un arret (=> no drift)
+#ifdef IDRAG_EXPERIMENTAL
+#define VYSLEW		(1<<17)	// deceleration max
+#endif
 
 /* IDRAG controle le scroll vertical d'un objet ou "page"
    en faisant varier yobj entre les butees yobjmin et yobjmax.
@@ -34,8 +39,20 @@ int yobjmax;	// yobj pour que le top de la page soit visible
 int oldy;
 int oldt;
 int vy;		// vitesse
+int peak_vy;	// vitesse de pointe observee
+#ifdef IDRAG_EXPERIMENTAL
+int max_acc;	// acceleration max observee
+int max_dec;	// deceleration max observee
+#endif
+int min_dt;	// duree min pour mesure vitesse
 int touching;	// pour detecter transition (land ou release)
 int drifting;	// free running (erre)
+// experiences
+int land_t;
+int rush;
+int rush_vy;
+int squelch;
+int squelch_vy;
 } IDRAGtype;
 
 // constructeur

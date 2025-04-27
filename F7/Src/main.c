@@ -40,7 +40,8 @@ void ETH_PhyEnterPowerDownMode(void);
 // N.B. cette appli utilise :
 //	- l'interruption du LTDC (vertical blank) pour cadener la boucle principale
 //	- la RTC, pour les operations cadencees a la seconde
-// Elle ne depend pas de systick, qu'on pourrait deasactiver
+// Elle ne depend pas de systick, qui est desactive apres le demarrage des drivers HAL
+// (cf jlcd_interrupt_on() )
 
 int show_flags;			// flags d'affichage
 int touch_occur_cnt = 0;	// anti-rebond pour single touch
@@ -439,6 +440,10 @@ switch	( item )
 	case 0 :
 		unscroll_timout = val;
 		LOGprint("unscroll_timout %d", unscroll_timout ); break;
+	case 1 :
+		idrag.min_dt = val;
+		if	( idrag.min_dt <= 0 ) idrag.min_dt = MINDT;
+		LOGprint("idrag min dt %d", idrag.min_dt ); break;
 	}
 }
 #endif
@@ -450,6 +455,15 @@ switch	( c )
 	{
 	case '0' :
 		LOGprint("0123456789\n012345\n67890123456789012345678901");
+		break;
+	case 'r' :
+		idrag.rush = 1;
+		break;
+	case 's' :
+		idrag.squelch = 1;
+		break;
+	case 'z' :
+		idrag.rush = 0; idrag.squelch = 0;
 		break;
 	default :
 		LOGprint("cmd '%c'", c );
@@ -542,6 +556,8 @@ init_zones_default();	// doit etre APRES create_menu
 jlcd_interrupt_on();
 jlcd_panel_on();
 
+report_interrupts();	// systick doit etre desactive, et LTDC (#88) active
+
 while	(1)
 	{
 	paint_flag = 0;
@@ -632,6 +648,7 @@ while	(1)
 		touch_occur_cnt = 0;
 		old_touch_cnt = 0;
 		} // if	TS_State.touchDetected 1, 2 ou 0
+
 	jrtc_get_day_time( &daytime );
 	if	( old_second != daytime.day_seconds )
 		{	// traitement cadence a la seconde
@@ -702,6 +719,6 @@ while	(1)
 	#ifdef PROFILER_PI2
 	profile_D8(1);
 	#endif
-	}
+	} // while 1
 }
 

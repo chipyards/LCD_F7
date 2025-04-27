@@ -1,6 +1,6 @@
 // ---------------------- demo des fonts et primitives scrollables --------------------------
 
-#define DEMO_DY 2000
+#define DEMO_DY 20031	// la demo genere le contenu a la demande, on peut la faire aussi grande qu'on veut ;-)
 
 void draw_r_arrow( int x, int y, int w, int h );
 

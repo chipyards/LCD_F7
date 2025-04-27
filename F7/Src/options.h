@@ -18,7 +18,7 @@
     (note : LOGFIFO peut exister sans TRANSCRIPT, alors sortie vers UART1 (CDC) sauf si USE_CDC_PRINT **/
 #define USE_LOGFIFO		// fifo forwardable vers transcript, avec copie sur CDC sauf si USE_CDC_PRINT
 #define USE_TRANSCRIPT		// scrollable transcript zone, necessite LOGFIFO
-//#define USE_CDC_PRINT		// indep. de LOGFIFO, simple buffer non-circulaire, controle de flux possible par blocage
+//#define USE_CDC_PRINT		// indep. de LOGFIFO, simple buffer non-circulaire, controle de flux possible par boucle bloquante
 #define USE_DEMO		// demo des fonts
 #define USE_PARAM		// demo de page de parametres ajustables
 // lateralite
